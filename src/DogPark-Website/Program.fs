@@ -93,8 +93,9 @@ let configureApp (app : IApplicationBuilder) =
         .UseGiraffe(webApp)
 
 let configureServices (services : IServiceCollection) =
-    services.AddCors()    |> ignore
-    services.AddGiraffe() |> ignore
+    ignore <| services.AddCors()        
+    ignore <| services.AddGiraffe()     
+    ignore <| services.AddLetsEncrypt() 
 
 let configureLogging (builder : ILoggingBuilder) =
     builder.AddFilter(fun l -> l.Equals LogLevel.Error)
