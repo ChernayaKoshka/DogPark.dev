@@ -8,6 +8,8 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open Giraffe
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.Hosting
 
 // ---------------------------------
 // Models
@@ -83,7 +85,7 @@ let configureCors (builder : CorsPolicyBuilder) =
            |> ignore
 
 let configureApp (app : IApplicationBuilder) =
-    let env = app.ApplicationServices.GetService<IHostingEnvironment>()
+    let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
     (match env.IsDevelopment() with
     | true  -> app.UseDeveloperExceptionPage()
     | false -> app.UseGiraffeErrorHandler errorHandler)
@@ -95,7 +97,6 @@ let configureApp (app : IApplicationBuilder) =
 let configureServices (services : IServiceCollection) =
     ignore <| services.AddCors()        
     ignore <| services.AddGiraffe()     
-    ignore <| services.AddLetsEncrypt() 
 
 let configureLogging (builder : ILoggingBuilder) =
     builder.AddFilter(fun l -> l.Equals LogLevel.Error)
@@ -103,10 +104,11 @@ let configureLogging (builder : ILoggingBuilder) =
            .AddDebug() |> ignore
 
 [<EntryPoint>]
-let main _ =
+let main args =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot     = Path.Combine(contentRoot, "WebRoot")
     WebHostBuilder()
+        .UseConfiguration(ConfigurationBuilder().AddCommandLine(args).Build())
         .UseKestrel()
         .UseContentRoot(contentRoot)
         .UseIISIntegration()
