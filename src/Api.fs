@@ -7,8 +7,15 @@ open Markdig
 open MySql.Data.MySqlClient
 open System.IO
 
+let getAllDbArticles = task {
+    use con = new MySqlConnection(MDBConnectionString)
+    do! con.OpenAsync()
+    let! result = con.QueryAsync<DBArticle>("SELECT * FROM ARTICLE")
+    return seq result
+}
+
 let getDbArticleById (article : int) = task {
-    use con = new MySqlConnection(mdbConnectionString)
+    use con = new MySqlConnection(MDBConnectionString)
     do! con.OpenAsync()
     let! result = con.QueryFirstOrDefaultAsync<DBArticle>("SELECT * FROM ARTICLE WHERE ARTICLE = @Article", {| Article = article |})
     return
