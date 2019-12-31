@@ -31,6 +31,20 @@ let showArticleById (id : int) : HttpHandler =
         return! showArticle article next ctx
     }
 
+let showArticleList : HttpHandler =
+    fun next ctx -> task {
+        let! articles = Api.getAllDbArticles
+        return!
+            htmlView
+                (articles
+                |> Seq.collect Views.articleListItem
+                |> Views.articleListTable
+                |> List.singleton
+                |> Views.layout)
+                next 
+                ctx         
+    }
+
 [<RequireQualifiedAccess>]
 module Api =
     let getArticle (article : DBArticle) : HttpHandler =
