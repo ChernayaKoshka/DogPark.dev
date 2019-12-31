@@ -23,7 +23,11 @@ let webApp =
                         routef "/article/%i" Handlers.Api.getArticleById
                     ])
                 routef "/article/%i" Handlers.showArticleById
-                route "/" >=> redirectTo true "/article/1"
+
+                route "/articles" >=> Handlers.showArticleList
+                route "/"         >=> redirectTo true "/article/1"
+                route "/home"     >=> redirectTo true "/article/1"
+                routex "/about"   >=> htmlView Views.about
             ]
         setStatusCode 404 >=> text "Not Found" ]
 
