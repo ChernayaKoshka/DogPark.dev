@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="../root/**/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Compile Include="Common.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Api.fs" />
+    <Compile Include="Views.fs" />
+    <Compile Include="Handlers.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.0.30" />
+    <PackageReference Include="Giraffe" Version="4.0.1" />
+    <PackageReference Include="markdig" Version="0.18.0" />
+    <PackageReference Include="MySqlConnector" Version="0.61.0" />
+    <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
+  </ItemGroup>
+</Project>
