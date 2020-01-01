@@ -9,14 +9,6 @@ open System
 open System.IO
 open System.Threading.Tasks
 
-let notLoggedIn : HttpHandler =
-    RequestErrors.UNAUTHORIZED
-        "Basic"
-        "Some Realm"
-        "You must be logged in."
-
-let mustBeLoggedIn : HttpHandler = requiresAuthentication notLoggedIn
-
 let error (ex : Exception) (logger : ILogger) : HttpHandler =
     logger.LogError(ex, "An unhandled exception has occurred while executing the request.")
     clearResponse >=> setStatusCode 500 >=> text "Something went wrong!"
@@ -53,6 +45,14 @@ let showArticleList : HttpHandler =
                 ctx         
     }
 
+let redirectShortUrl (short : string) : HttpHandler =
+    fun next ctx -> task { 
+        let! long = Api.tryFindShortUrl short
+        match long with
+        | Some long -> return! redirectTo true long next ctx
+        | None -> return! RequestErrors.notFound (text (sprintf "Short URL '%s' does not exist on this server." short)) next ctx
+    }
+
 [<RequireQualifiedAccess>]
 module Api =
     let getArticle (article : DBArticle) : HttpHandler =
@@ -74,4 +74,18 @@ module Api =
                 return! getArticle article next ctx
             | None -> 
                 return! notFound ctx
+        }
+    
+    let createShortUrl : HttpHandler =
+        fun next ctx -> task {
+            let! long = ctx.BindFormAsync<ShortenUrlPostData>()
+            if Uri.IsWellFormedUriString(long.LongUrl, UriKind.Absolute) then
+                let! result = Api.createShortUrl long.LongUrl
+                match result with
+                | Ok short ->
+                    return! htmlView (Views.urlShortenerSuccess short) next ctx
+                | Error err ->
+                    return! ServerErrors.internalError (text err) next ctx
+            else
+                return! RequestErrors.badRequest (text (sprintf "'%s' is not a valid URL." long.LongUrl)) next ctx
         }
