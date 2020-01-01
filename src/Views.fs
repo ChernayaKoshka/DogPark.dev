@@ -28,15 +28,21 @@ let about =
 let partial () =
     h1 [] [ encodedText "DogPark" ]
 
-let articleView (article : Article) =
+let includeHighlightJs() =
     [
         link [ 
-                _rel "stylesheet" 
-                _href "//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/default.min.css"
-            ]
+            _rel "stylesheet" 
+            _href "//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/default.min.css"
+        ]
         script [ _src "//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js" ] [ ]
         script [ _src "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.9/languages/fsharp.min.js" ] [ ]
         script [ ] [ rawText "hljs.initHighlightingOnLoad();" ]
+    ]
+
+
+let articleView (article : Article) =
+    [
+        yield! includeHighlightJs()
         partial()
         h2 [ ] [ str article.Headline ]
         h3 [ ] [ str article.Author ]
@@ -54,13 +60,11 @@ let articleListTable articleListItems =
     ]
 
 let articleListItem (article : DBArticle) =
-    [
-        tr [ ] [ 
-            td [ ] [ 
-                a [ _href (sprintf "/article/%d" article.Article) ] [ 
-                    Text article.Headline
-                ]
+    tr [ ] [ 
+        td [ ] [ 
+            a [ _href (sprintf "/article/%d" article.Article) ] [ 
+                Text article.Headline
             ]
-            td [ ] [ Text article.Author ]
         ]
+        td [ ] [ Text article.Author ]
     ]

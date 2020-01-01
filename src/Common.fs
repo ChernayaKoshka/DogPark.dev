@@ -5,6 +5,7 @@ open System.IO
 open Markdig
 
 #if DEBUG
+// !@#$ing stupid that I have to do this
 Directory.SetCurrentDirectory("bin/Debug/netcoreapp3.1/")
 #endif
 

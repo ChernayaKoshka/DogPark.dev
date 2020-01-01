@@ -37,7 +37,7 @@ let showArticleList : HttpHandler =
         return!
             htmlView
                 (articles
-                |> Seq.collect Views.articleListItem
+                |> Seq.map Views.articleListItem
                 |> Views.articleListTable
                 |> List.singleton
                 |> Views.layout)
