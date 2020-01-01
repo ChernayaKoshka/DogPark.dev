@@ -17,3 +17,9 @@ type Article =
         Headline : string
         Body : string
     }
+
+[<CLIMutable>]
+type ShortenUrlPostData =
+    {
+        LongUrl : string
+    }
