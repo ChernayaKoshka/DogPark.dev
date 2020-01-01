@@ -9,6 +9,7 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open System
+open Microsoft.AspNetCore.HttpOverrides
 
 // ---------------------------------
 // Web app
@@ -18,18 +19,29 @@ let webApp =
     choose [
         GET >=>
             choose [
-                subRoute "/api" (
-                    choose [
-                        routef "/article/%i" Handlers.Api.getArticleById
-                    ])
+                routef "/@%s" Handlers.redirectShortUrl
                 routef "/article/%i" Handlers.showArticleById
 
                 route "/articles" >=> Handlers.showArticleList
                 route "/"         >=> redirectTo true "/article/1"
                 route "/home"     >=> redirectTo true "/article/1"
-                routex "/about"   >=> htmlView Views.about
+                route "/about"    >=> htmlView Views.about
             ]
-        setStatusCode 404 >=> text "Not Found" ]
+        choose [
+            subRoute "/api" (
+                choose [
+                    GET >=> choose [
+                        routef "/article/%i" Handlers.Api.getArticleById
+                    ]
+                ])
+            route "/shorten" >=>
+                choose [
+                    GET >=> htmlView (Views.layout [ Views.urlShortenerForm ])
+                    POST >=> route "/shorten" >=> Handlers.Api.createShortUrl
+                ]
+        ]
+        setStatusCode 404 >=> text "Not Found" 
+    ]
 
 // ---------------------------------
 // Config and Main
@@ -49,11 +61,14 @@ let configureApp (app : IApplicationBuilder) =
         .UseHttpsRedirection()
         .UseCors(configureCors)
         .UseStaticFiles()
+        .UseForwardedHeaders()
         .UseGiraffe(webApp)
 
 let configureServices (services : IServiceCollection) =
     ignore <| services.AddCors()        
-    ignore <| services.AddGiraffe()     
+    ignore <| services.AddGiraffe()
+    ignore <| services.Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) -> 
+        options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto)
 
 let configureLogging (builder : ILoggingBuilder) =
     builder.AddFilter(fun l -> l.Equals LogLevel.Error)
