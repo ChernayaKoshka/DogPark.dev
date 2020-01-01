@@ -12,6 +12,7 @@ let layout (content: XmlNode list) =
         nav [ ] [ 
             a [ _href "/home" ] [ Text "Home" ]
             a [ _href "/articles" ] [ Text "Articles" ]
+            a [ _href "/shorten" ] [ Text "URL Shortener" ]
             a [ _href "/about" ] [ Text "About" ]
          ]
         body [] content
@@ -68,3 +69,24 @@ let articleListItem (article : DBArticle) =
         ]
         td [ ] [ Text article.Author ]
     ]
+
+let urlShortenerForm =
+    div [ ] [
+        form [ _action "/shorten"; _method "POST" ] [
+            div [ ] [
+                label [ ] [ str "Long Url: " ]
+                input [ _type "Text"; _name "LongUrl" ]
+            ]
+            input [ _type "Submit" ]
+        ]
+    ]
+
+let urlShortenerSuccess short =
+    let url = sprintf "https://dogpark.dev/@%s" short
+    [
+        div [ ] [
+            label [ ] [ str "Short Url:" ]
+            a [ _href url ] [ str url ]
+        ]
+    ]
+    |> layout
