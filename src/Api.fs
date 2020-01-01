@@ -7,6 +7,39 @@ open Markdig
 open MySql.Data.MySqlClient
 open System.IO
 
+let makeShortUrlString() =
+    let max = urlDictionary.Length - 1
+    urlDictionary.[rand.Next(0, max)] + urlDictionary.[rand.Next(0, max)] + urlDictionary.[rand.Next(0, max)]
+
+let createShortUrl (longUrl : string) = task {
+    use con = new MySqlConnection(MDBConnectionString)
+    do! con.OpenAsync()
+    let shortUrl = makeShortUrlString()
+    try
+        let! result = con.ExecuteAsync("INSERT INTO SHORTURL (`short`, `long`) VALUES (@Short, @Long)", {| Short = shortUrl; Long = longUrl |})
+        
+        if result <> 1 then
+            return Error "Insertion failed!"
+        else
+            return Ok shortUrl
+    with
+    | ex ->
+        return
+            ex
+            |> string
+            |> Error
+}
+
+let tryFindShortUrl (shortUrl : string) = task {
+    use con = new MySqlConnection(MDBConnectionString)
+    do! con.OpenAsync()
+    let! result = con.QueryFirstOrDefaultAsync<string>("SELECT `long` FROM SHORTURL WHERE `short` = @Short", {| Short = shortUrl |})
+    if isNull result then
+        return None
+    else
+        return Some result
+}
+
 let getAllDbArticles = task {
     use con = new MySqlConnection(MDBConnectionString)
     do! con.OpenAsync()
