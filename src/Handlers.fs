@@ -9,6 +9,14 @@ open System
 open System.IO
 open System.Threading.Tasks
 
+let notLoggedIn : HttpHandler =
+    RequestErrors.UNAUTHORIZED
+        "Basic"
+        "Some Realm"
+        "You must be logged in."
+
+let mustBeLoggedIn : HttpHandler = requiresAuthentication notLoggedIn
+
 let error (ex : Exception) (logger : ILogger) : HttpHandler =
     logger.LogError(ex, "An unhandled exception has occurred while executing the request.")
     clearResponse >=> setStatusCode 500 >=> text "Something went wrong!"
