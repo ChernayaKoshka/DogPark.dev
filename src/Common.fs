@@ -23,3 +23,10 @@ let rand = Random()
 let urlDictionary =
     Path.Combine(contentRoot, "urldictionary.txt")
     |> File.ReadAllLines
+
+// http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+let topLevelDomains =
+    Path.Combine(contentRoot, "tlds-alpha-by-domain.txt")
+    |> File.ReadAllLines
+    |> Array.filter (fun str -> str.StartsWith("#") |> not || String.IsNullOrWhiteSpace(str))
+    
