@@ -81,7 +81,7 @@ module Api =
             let! long = ctx.BindFormAsync<ShortenUrlPostData>()
             match tryMakeUrl long.LongUrl with
             | Ok uri ->
-                let! result = Api.createShortUrl uri.AbsolutePath
+                let! result = Api.createShortUrl uri.AbsoluteUri
                 match result with
                 | Ok short ->
                     return! htmlView (Views.urlShortenerSuccess short) next ctx
