@@ -79,13 +79,14 @@ module Api =
     let createShortUrl : HttpHandler =
         fun next ctx -> task {
             let! long = ctx.BindFormAsync<ShortenUrlPostData>()
-            if Uri.IsWellFormedUriString(long.LongUrl, UriKind.Absolute) then
-                let! result = Api.createShortUrl long.LongUrl
+            match tryMakeUrl long.LongUrl with
+            | Ok uri ->
+                let! result = Api.createShortUrl uri.AbsolutePath
                 match result with
                 | Ok short ->
                     return! htmlView (Views.urlShortenerSuccess short) next ctx
                 | Error err ->
                     return! ServerErrors.internalError (text err) next ctx
-            else
-                return! RequestErrors.badRequest (text (sprintf "'%s' is not a valid URL." long.LongUrl)) next ctx
+            | Error err ->
+                return! RequestErrors.badRequest (text (sprintf "'%s' is not a valid URL.\n%s" long.LongUrl err)) next ctx
         }

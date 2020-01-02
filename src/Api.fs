@@ -15,19 +15,24 @@ let createShortUrl (longUrl : string) = task {
     use con = new MySqlConnection(MDBConnectionString)
     do! con.OpenAsync()
     let shortUrl = makeShortUrlString()
-    try
-        let! result = con.ExecuteAsync("INSERT INTO SHORTURL (`short`, `long`) VALUES (@Short, @Long)", {| Short = shortUrl; Long = longUrl |})
-        
-        if result <> 1 then
-            return Error "Insertion failed!"
-        else
-            return Ok shortUrl
-    with
-    | ex ->
-        return
-            ex
-            |> string
-            |> Error
+
+    match tryMakeUrl longUrl with
+    | Ok uri ->
+        try
+            let! result = con.ExecuteAsync("INSERT INTO SHORTURL (`short`, `long`) VALUES (@Short, @Long)", {| Short = shortUrl; Long = uri.AbsolutePath |})
+            
+            if result <> 1 then
+                return Error "Insertion failed!"
+            else
+                return Ok shortUrl
+        with
+        | ex ->
+            return
+                ex
+                |> string
+                |> Error
+    | Error err ->
+        return Error err
 }
 
 let tryFindShortUrl (shortUrl : string) = task {
