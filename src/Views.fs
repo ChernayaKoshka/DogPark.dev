@@ -75,7 +75,7 @@ let urlShortenerForm =
         form [ _action "/shorten"; _method "POST" ] [
             div [ ] [
                 label [ ] [ str "Long Url: " ]
-                input [ _type "Text"; _name "LongUrl" ]
+                input [ _type "url"; _name "LongUrl" ]
             ]
             input [ _type "Submit" ]
         ]
