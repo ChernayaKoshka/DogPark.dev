@@ -19,7 +19,7 @@ let createShortUrl (longUrl : string) = task {
     match tryMakeUrl longUrl with
     | Ok uri ->
         try
-            let! result = con.ExecuteAsync("INSERT INTO SHORTURL (`short`, `long`) VALUES (@Short, @Long)", {| Short = shortUrl; Long = uri.AbsolutePath |})
+            let! result = con.ExecuteAsync("INSERT INTO SHORTURL (`short`, `long`) VALUES (@Short, @Long)", {| Short = shortUrl; Long = uri.AbsoluteUri |})
             
             if result <> 1 then
                 return Error "Insertion failed!"
