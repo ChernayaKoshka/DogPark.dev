@@ -8,6 +8,7 @@
     </Content>
     <Compile Include="Common.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="Helpers.fs" />
     <Compile Include="Api.fs" />
     <Compile Include="Views.fs" />
     <Compile Include="Handlers.fs" />
