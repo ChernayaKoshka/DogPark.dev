@@ -80,7 +80,7 @@ let urlShortenerForm =
             ]
             input [ _type "Submit" ]
         ]
-        div [ _id "shorteningErrors"; _class "hidden" ] [ ]
+        div [ _id "shorteningErrors"; ] [ ]
     ]
 
 let urlShortenerSuccess short =

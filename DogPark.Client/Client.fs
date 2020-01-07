@@ -31,7 +31,6 @@ let validateShortenerForm() =
     let url : HTMLInputElement = unbox document.getElementById "LongUrl"
 
     if not <| validateUrl url.value then
-        errorNode.classList.remove "hidden"
         let error : Types.HTMLParagraphElement = unbox document.createElement "p"
         error.textContent <- "URL is not valid!"
         errorNode.appendChild error
