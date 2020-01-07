@@ -28,10 +28,10 @@ let validateShortenerForm() =
     let errorNode : HTMLDivElement = unbox document.getElementById "shorteningErrors"
     removeChildren errorNode
 
-    let url = (document.getElementById "LongUrl").nodeValue
+    let url : HTMLInputElement = unbox document.getElementById "LongUrl"
 
-    if not <| validateUrl url then
-        errorNode?style?display <- "block"
+    if not <| validateUrl url.value then
+        errorNode.classList.remove "hidden"
         let error : Types.HTMLParagraphElement = unbox document.createElement "p"
         error.textContent <- "URL is not valid!"
         errorNode.appendChild error
