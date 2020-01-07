@@ -62,6 +62,13 @@ Target.create "Run" (fun _ ->
   |> ignore
 )
 
+Target.create "Publish" (fun _ ->
+  let publishPath = Environment.environVarOrDefault "output" "published/"
+  Directory.ensure publishPath
+  Shell.copyRecursive buildOutput publishPath true
+  |> Trace.logItems "Publish! - "
+)
+
 Target.create "All" ignore
 
 "Clean"
@@ -69,5 +76,8 @@ Target.create "All" ignore
   ==> "Build"
   ==> "Run"
   ==> "All"
+
+"Build"
+  ==> "Publish"
 
 Target.runOrDefault "All"
