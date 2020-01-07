@@ -8,6 +8,7 @@ open Microsoft.Extensions.Logging
 open System
 open System.IO
 open System.Threading.Tasks
+open DogPark.Shared
 
 let error (ex : Exception) (logger : ILogger) : HttpHandler =
     logger.LogError(ex, "An unhandled exception has occurred while executing the request.")

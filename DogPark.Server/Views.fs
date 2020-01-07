@@ -72,13 +72,15 @@ let articleListItem (article : DBArticle) =
 
 let urlShortenerForm =
     div [ ] [
-        form [ _action "/shorten"; _method "POST" ] [
+        script [ _src "./scripts/Client.js" ] [ ]
+        form [ _name "shortenerForm"; _action "/shorten"; _method "POST"; attr "onsubmit" "return validateShortenerForm()"  ] [
             div [ ] [
                 label [ ] [ str "Long Url: " ]
-                input [ _type "text"; _name "LongUrl" ]
+                input [ _type "text"; _id "LongUrl"; _name "LongUrl" ]
             ]
             input [ _type "Submit" ]
         ]
+        div [ _id "shorteningErrors"; _class "hidden" ] [ ]
     ]
 
 let urlShortenerSuccess short =
