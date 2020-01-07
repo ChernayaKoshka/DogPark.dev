@@ -48,7 +48,7 @@ let showArticleList : HttpHandler =
 
 let redirectShortUrl (short : string) : HttpHandler =
     fun next ctx -> task { 
-        let! long = Api.tryFindShortUrl short
+        let! long = Api.tryFindLongUrlFromShortUrl short
         match long with
         | Some long -> return! redirectTo true long next ctx
         | None -> return! RequestErrors.notFound (text (sprintf "Short URL '%s' does not exist on this server." short)) next ctx

@@ -11,6 +11,26 @@ let makeShortUrlString() =
     let max = urlDictionary.Length - 1
     urlDictionary.[rand.Next(0, max)] + urlDictionary.[rand.Next(0, max)] + urlDictionary.[rand.Next(0, max)]
 
+let tryFindLongUrlFromShortUrl (shortUrl : string) = task {
+    use con = new MySqlConnection(MDBConnectionString)
+    do! con.OpenAsync()
+    let! result = con.QueryFirstOrDefaultAsync<string>("SELECT `long` FROM SHORTURL WHERE `short` = @Short", {| Short = shortUrl |})
+    if isNull result then
+        return None
+    else
+        return Some result
+}
+
+let tryFindShortUrlFromLongUrl (longUrl : string) = task {
+    use con = new MySqlConnection(MDBConnectionString)
+    do! con.OpenAsync()
+    let! result = con.QueryFirstOrDefaultAsync<string>("SELECT `short` FROM SHORTURL WHERE `long` = @Long", {| Long = longUrl |})
+    if isNull result then
+        return None
+    else
+        return Some result
+}
+
 let createShortUrl (longUrl : string) = task {
     use con = new MySqlConnection(MDBConnectionString)
     do! con.OpenAsync()
@@ -19,12 +39,16 @@ let createShortUrl (longUrl : string) = task {
     match tryMakeUrl longUrl with
     | Ok uri ->
         try
-            let! result = con.ExecuteAsync("INSERT INTO SHORTURL (`short`, `long`) VALUES (@Short, @Long)", {| Short = shortUrl; Long = uri.AbsoluteUri |})
-            
-            if result <> 1 then
-                return Error "Insertion failed!"
-            else
-                return Ok shortUrl
+            match! tryFindShortUrlFromLongUrl longUrl with
+            | Some short ->
+                return Ok short
+            | None ->
+                let! result = con.ExecuteAsync("INSERT INTO SHORTURL (`short`, `long`) VALUES (@Short, @Long)", {| Short = shortUrl; Long = uri.AbsoluteUri |})
+                
+                if result <> 1 then
+                    return Error "Insertion failed!"
+                else
+                    return Ok shortUrl
         with
         | ex ->
             return
@@ -33,16 +57,6 @@ let createShortUrl (longUrl : string) = task {
                 |> Error
     | Error err ->
         return Error err
-}
-
-let tryFindShortUrl (shortUrl : string) = task {
-    use con = new MySqlConnection(MDBConnectionString)
-    do! con.OpenAsync()
-    let! result = con.QueryFirstOrDefaultAsync<string>("SELECT `long` FROM SHORTURL WHERE `short` = @Short", {| Short = shortUrl |})
-    if isNull result then
-        return None
-    else
-        return Some result
 }
 
 let getAllDbArticles = task {
