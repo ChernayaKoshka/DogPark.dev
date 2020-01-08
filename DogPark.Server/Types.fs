@@ -2,6 +2,13 @@
 module DogPark.Types
 
 [<CLIMutable>]
+type LoginModel =
+    {
+        UserName : string
+        Password : string
+    }
+
+[<CLIMutable>]
 type DBArticle =
     {
         Article : uint32
