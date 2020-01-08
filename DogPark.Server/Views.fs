@@ -1,5 +1,6 @@
 module DogPark.Views
 open Giraffe.GiraffeViewEngine
+open DogPark.Authentication
 
 let layout (content: XmlNode list) =
     html [] [
@@ -14,9 +15,50 @@ let layout (content: XmlNode list) =
             a [ _href "/articles" ] [ Text "Articles" ]
             a [ _href "/shorten" ] [ Text "URL Shortener" ]
             a [ _href "/about" ] [ Text "About" ]
+            a [ _href "/login" ] [ Text "login" ]
          ]
         body [] content
     ]
+
+let registerPage =
+    [
+        form [ _action "/register"; _method "POST" ] [
+            div [] [
+                label [] [ str "User name:" ]
+                input [ _name "UserName"; _type "text" ]
+            ]
+            div [] [
+                label [] [ str "Password:" ]
+                input [ _name "Password"; _type "password" ]
+            ]
+            input [ _type "submit" ]
+        ]
+    ] |> layout
+
+let loginPage (loginFailed : bool) =
+    [
+        if loginFailed then yield p [ _style "color: Red;" ] [ str "Login failed." ]
+
+        yield form [ _action "/login"; _method "POST" ] [
+            div [] [
+                label [] [ str "User name:" ]
+                input [ _name "UserName"; _type "text" ]
+            ]
+            div [] [
+                label [] [ str "Password:" ]
+                input [ _name "Password"; _type "password" ]
+            ]
+            input [ _type "submit" ]
+        ]
+    ] |> layout
+
+let userPage (user : User) =
+    [
+        p [] [
+            sprintf "User name: %s" user.UserName
+            |> str
+        ]
+    ] |> layout
 
 let about =
     [
