@@ -1,43 +1,61 @@
 module DogPark.App
 
+open DogPark.Api
+open DogPark.Authentication
+open DogPark.Handlers
 open Giraffe
+open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.HttpOverrides
+open Microsoft.AspNetCore.Identity
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open System
-open Microsoft.AspNetCore.HttpOverrides
 
 // ---------------------------------
 // Web app
 // ---------------------------------
 
-let webApp =
+let makeWebApp (handler : Handlers) =
     choose [
         GET >=>
             choose [
-                routef "/@%s" Handlers.redirectShortUrl
-                routef "/article/%i" Handlers.showArticleById
+                routef "/@%s" handler.RedirectShortUrl
+                routef "/article/%i" handler.ShowArticleById
 
-                route "/articles" >=> Handlers.showArticleList
+                route "/articles" >=> handler.ShowArticleList
                 route "/"         >=> redirectTo true "/article/1"
                 route "/home"     >=> redirectTo true "/article/1"
                 route "/about"    >=> htmlView Views.about
+
+                
+                route "/register" >=> htmlView Views.registerPage
+                route "/login"    >=> htmlView (Views.loginPage false)
+
+                route "/logout"   >=> handler.MustBeLoggedIn >=> handler.LogoutHandler
+                route "/user"     >=> handler.MustBeLoggedIn >=> handler.UserHandler
+            ]
+        POST >=>
+            choose [
+                route "/register" >=> handler.RegisterHandler
+                route "/login"    >=> handler.LoginHandler
             ]
         choose [
             subRoute "/api" (
                 choose [
                     GET >=> choose [
-                        routef "/article/%i" Handlers.Api.getArticleById
+                        routef "/article/%i" handler.GetArticleById
                     ]
                 ])
             route "/shorten" >=>
                 choose [
                     GET >=> htmlView (Views.layout [ Views.urlShortenerForm ])
-                    POST >=> route "/shorten" >=> Handlers.Api.createShortUrl
+                    POST >=> route "/shorten" >=> handler.CreateShortUrl
                 ]
         ]
         setStatusCode 404 >=> text "Not Found" 
@@ -53,18 +71,42 @@ let configureCors (builder : CorsPolicyBuilder) =
            .AllowAnyHeader()
            |> ignore
 
-let configureApp (app : IApplicationBuilder) =
+let configureApp (handlers : Handlers) (app : IApplicationBuilder) =
     let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
     (match env.IsDevelopment() with
     | true  -> app.UseDeveloperExceptionPage()
-    | false -> app.UseGiraffeErrorHandler Handlers.error)
+    | false -> app.UseGiraffeErrorHandler handlers.Error)
         .UseHttpsRedirection()
         .UseCors(configureCors)
         .UseStaticFiles()
         .UseForwardedHeaders()
-        .UseGiraffe(webApp)
+        .UseAuthentication()
+        .UseGiraffe(makeWebApp handlers)
 
 let configureServices (services : IServiceCollection) =
+    ignore <| services.AddTransient<IUserStore<User>, MariaDBStore>()
+    ignore <| services.AddTransient<IRoleStore<Role>, MariaDBRoleStore>()
+    ignore <| 
+        services
+            .AddIdentity<User, Role>(
+                fun options ->
+                    // Password settings
+                    options.Password.RequireDigit   <- true
+                    options.Password.RequiredLength <- 8
+                    options.Password.RequireNonAlphanumeric <- false
+                    options.Password.RequireUppercase <- true
+                    options.Password.RequireLowercase <- false
+            )
+            .AddDefaultTokenProviders()
+
+    ignore <|
+        services.ConfigureApplicationCookie(
+            fun options ->
+                options.ExpireTimeSpan <- TimeSpan.FromDays 150.0
+                options.LoginPath <- PathString "/login"
+                options.LogoutPath <- PathString "/logout"
+        )
+
     ignore <| services.AddCors()        
     ignore <| services.AddGiraffe()
     ignore <| services.Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) -> 
@@ -83,7 +125,15 @@ let main args =
             .AddCommandLine(args)
             .Build()
 
-    WebHostBuilder()
+    let configureApp = 
+        "MariaDB"
+        |> config.GetConnectionString
+        |> Api
+        |> Handlers
+        |> configureApp
+
+    WebHost
+        .CreateDefaultBuilder()
         .UseConfiguration(config)
         .UseKestrel()
         .UseContentRoot(contentRoot)
