@@ -1,88 +1,143 @@
-[<RequireQualifiedAccess>]
 module DogPark.Handlers
 
+open DogPark.Authentication
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open Giraffe
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Identity
 open Microsoft.Extensions.Logging
 open System
 open System.IO
+open System.Text
 open System.Threading.Tasks
-open DogPark.Shared
+open DogPark.Api
 
-let error (ex : Exception) (logger : ILogger) : HttpHandler =
-    logger.LogError(ex, "An unhandled exception has occurred while executing the request.")
-    clearResponse >=> setStatusCode 500 >=> text "Something went wrong!"
+type Handlers(api : Api) =
+    member this.Error (ex : Exception) (logger : ILogger) : HttpHandler =
+        logger.LogError(ex, "An unhandled exception has occurred while executing the request.")
+        clearResponse >=> setStatusCode 500 >=> text "Something went wrong!"
 
-let finishEarly : HttpFunc = Some >> Task.FromResult
+    member this.FinishEarly : HttpFunc = Some >> Task.FromResult
 
-let notFound = RequestErrors.notFound (text String.Empty) finishEarly
+    member this.NotFound = RequestErrors.notFound (text String.Empty) this.FinishEarly
 
-let showArticle(article : Task<Article option>) : HttpHandler = 
-    fun next ctx -> task {
-        let! article = article
-        match article with
-        | Some article -> return! htmlView (Views.articleView article) next ctx
-        | None ->  return! notFound ctx
-    }
+    member this.ShowErrors (errors : IdentityError seq) =
+        errors
+        |> Seq.fold (fun acc err ->
+            sprintf "Code: %s, Description: %s" err.Code err.Description
+            |> acc.AppendLine : StringBuilder) (StringBuilder(""))
+        |> (fun x -> x.ToString())
+        |> text
 
-let showArticleById (id : int) : HttpHandler =
-    fun (next : HttpFunc) (ctx : HttpContext) -> task {
-        let article = Api.getArticleById id
-        return! showArticle article next ctx
-    }
+    member this.RegisterHandler : HttpHandler =
+        fun (next : HttpFunc) (ctx : HttpContext) ->
+            task {
+                let! model       = ctx.BindFormAsync<LoginModel>()
+                let  user        = User(UserName = model.UserName)
+                let  userManager = ctx.GetService<UserManager<User>>()
+                let! result      = userManager.CreateAsync(user, model.Password)
 
-let showArticleList : HttpHandler =
-    fun next ctx -> task {
-        let! articles = Api.getAllDbArticles
-        return!
-            htmlView
-                (articles
-                |> Seq.map Views.articleListItem
-                |> Views.articleListTable
-                |> List.singleton
-                |> Views.layout)
-                next 
-                ctx         
-    }
+                match result.Succeeded with
+                | false -> return! this.ShowErrors result.Errors next ctx
+                | true  ->
+                    let signInManager = ctx.GetService<SignInManager<User>>()
+                    do! signInManager.SignInAsync(user, true)
+                    return! redirectTo false "/user" next ctx
+            }
 
-let redirectShortUrl (short : string) : HttpHandler =
-    fun next ctx -> task { 
-        let! long = Api.tryFindLongUrlFromShortUrl short
-        match long with
-        | Some long -> return! redirectTo true long next ctx
-        | None -> return! RequestErrors.notFound (text (sprintf "Short URL '%s' does not exist on this server." short)) next ctx
-    }
+    member this.LoginHandler : HttpHandler =
+        fun (next : HttpFunc) (ctx : HttpContext) ->
+            task {
+                let! model = ctx.BindFormAsync<LoginModel>()
+                let signInManager = ctx.GetService<SignInManager<User>>()
+                let! result = signInManager.PasswordSignInAsync(model.UserName, model.Password, true, false)
+                match result.Succeeded with
+                | true  -> return! redirectTo false "/user" next ctx
+                | false -> return! htmlView (Views.loginPage true) next ctx
+            }
 
-[<RequireQualifiedAccess>]
-module Api =
-    let getArticle (article : DBArticle) : HttpHandler =
+    member this.UserHandler : HttpHandler =
+        fun (next : HttpFunc) (ctx : HttpContext) ->
+            task {
+                let userManager = ctx.GetService<UserManager<User>>()
+                let! user = userManager.GetUserAsync ctx.User
+                return! (user |> Views.userPage |> htmlView) next ctx
+            }
+
+    member this.MustBeLoggedIn : HttpHandler =
+        requiresAuthentication (redirectTo false "/login")
+
+    member this.LogoutHandler : HttpHandler =
+        fun (next : HttpFunc) (ctx : HttpContext) ->
+            task {
+                let signInManager = ctx.GetService<SignInManager<User>>()
+                do! signInManager.SignOutAsync()
+                return! (redirectTo false "/") next ctx
+            }
+
+    member this.ShowArticle(article : Task<Article option>) : HttpHandler = 
+        fun next ctx -> task {
+            let! article = article
+            match article with
+            | Some article -> return! htmlView (Views.articleView article) next ctx
+            | None ->  return! this.NotFound ctx
+        }
+
+    member this.ShowArticleById (id : int) : HttpHandler =
+        fun (next : HttpFunc) (ctx : HttpContext) -> task {
+            let article = api.GetArticleById id
+            return! this.ShowArticle article next ctx
+        }
+
+    member this.ShowArticleList : HttpHandler =
+        fun next ctx -> task {
+            let! articles = api.GetAllDbArticles
+            return!
+                htmlView
+                    (articles
+                    |> Seq.map Views.articleListItem
+                    |> Views.articleListTable
+                    |> List.singleton
+                    |> Views.layout)
+                    next 
+                    ctx         
+        }
+
+    member this.RedirectShortUrl (short : string) : HttpHandler =
+        fun next ctx -> task { 
+            let! long = api.TryFindLongUrlFromShortUrl short
+            match long with
+            | Some long -> return! redirectTo true long next ctx
+            | None -> return! RequestErrors.notFound (text (sprintf "Short URL '%s' does not exist on this server." short)) next ctx
+        }
+
+    member this.GetArticle (article : DBArticle) : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) -> task {
             let path = Path.Combine(articleRoot, article.FilePath)
 
             if File.Exists path then
-                let! article = Api.readArticle article
+                let! article = api.ReadArticle article
                 return! negotiate article next ctx
             else
-                return! notFound ctx
+                return! this.NotFound ctx
         }
 
-    let getArticleById (id : int) : HttpHandler = 
+    member this.GetArticleById (id : int) : HttpHandler = 
         fun next ctx -> task {
-            let! article = Api.getDbArticleById id
+            let! article = api.GetDbArticleById id
             match article with
             | Some article -> 
-                return! getArticle article next ctx
+                return! this.GetArticle article next ctx
             | None -> 
-                return! notFound ctx
+                return! this.NotFound ctx
         }
     
-    let createShortUrl : HttpHandler =
+    member this.CreateShortUrl : HttpHandler =
         fun next ctx -> task {
             let! long = ctx.BindFormAsync<ShortenUrlPostData>()
             match tryMakeUrl long.LongUrl with
             | Ok uri ->
-                let! result = Api.createShortUrl uri.AbsoluteUri
+                let! result = api.CreateShortUrl uri.AbsoluteUri
                 match result with
                 | Ok short ->
                     return! htmlView (Views.urlShortenerSuccess short) next ctx
