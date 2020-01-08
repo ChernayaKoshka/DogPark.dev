@@ -9,6 +9,9 @@
     <Compile Include="../DogPark.Shared/Shared.Types.fs" />
     <Compile Include="../DogPark.Shared/Helpers.fs" />
     <Compile Include="Common.fs" />
+    <Compile Include="Authentication/Types.fs" />
+    <Compile Include="Authentication/UserStore.fs" />
+    <Compile Include="Authentication/RoleStore.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Api.fs" />
     <Compile Include="Views.fs" />
