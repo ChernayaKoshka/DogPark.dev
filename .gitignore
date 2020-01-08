@@ -8,6 +8,7 @@ yarn.lock
 publish.bat
 output/
 **/DogPark-Articles/*.md
+appsettings*json
 
 # User-specific files
 *.rsuser
