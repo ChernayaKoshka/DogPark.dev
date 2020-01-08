@@ -30,6 +30,8 @@ Target.create "Clean" (fun _ ->
 
 Target.create "Restore" (fun _ ->
   !! "**/*.*proj"
+  -- "**/.fable/**"
+  -- "**/node_modules/**"
   |> Seq.iter (DotNet.restore id)
 
   Yarn.install (fun bo -> { bo with WorkingDirectory = "./DogPark.Client/" })
@@ -42,6 +44,7 @@ Target.create "Build" (fun _ ->
     Trace.log "Building .NET projects..."
     !! "**/*.*proj"
     -- "**/.fable/**"
+    -- "**/node_modules/**"
     -- "**/DogPark.Client/**"
     |> Seq.iter (
         DotNet.build (fun bo -> 
@@ -56,7 +59,7 @@ Target.create "Build" (fun _ ->
 )
 
 Target.create "Run" (fun _ ->
-  CreateProcess.fromRawCommand (Path.Combine(buildOutput, "server.exe")) List.empty
+  CreateProcess.fromRawCommandLine (Path.Combine(buildOutput, "server.exe")) "--environment Development"
   |> CreateProcess.withWorkingDirectory buildOutput
   |> Proc.run
   |> ignore
