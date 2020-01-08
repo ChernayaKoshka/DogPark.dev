@@ -5,6 +5,9 @@ open System.IO
 open System
 open Markdig
 open System.Text.RegularExpressions
+open FSharp.Control.Tasks.V2.ContextInsensitive
+open MySql.Data.MySqlClient
+open System.Threading.Tasks
 
 #if DEBUG
 // !@#$ing stupid that I have to do this
@@ -16,8 +19,6 @@ let webRoot     = Path.Combine(contentRoot, "WebRoot")
 let articleRoot = Path.Combine(contentRoot, "DogPark-Articles")
 
 let markdownPipeline = MarkdownPipelineBuilder().DisableHtml().Build()
-
-let [<Literal>] MDBConnectionString = """Server=localhost;Uid=DogPark;Database=DogPark;Port=3306"""
 
 let rand = Random()
 
