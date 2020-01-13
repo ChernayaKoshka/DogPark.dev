@@ -127,7 +127,7 @@ let main args =
 
     let configureApp = 
         "MariaDB"
-        |> config.GetConnectionString
+        |> config.GetValue
         |> Api
         |> Handlers
         |> configureApp
