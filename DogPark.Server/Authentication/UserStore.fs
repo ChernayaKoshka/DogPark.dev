@@ -12,7 +12,7 @@ open MySql.Data.MySqlClient
 open Dapper
 
 type MariaDBStore(config : IConfiguration) =
-    let connectionString = config.GetConnectionString("MariaDB")
+    let connectionString = config.GetValue("MariaDB")
     interface IUserStore<User> with
         member __.Dispose(): unit =
             ()
