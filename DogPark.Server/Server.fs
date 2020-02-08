@@ -55,7 +55,7 @@ let makeWebApp (handler : Handlers) =
             route "/shorten" >=>
                 choose [
                     GET >=> handler.GenericSignedInCheck htmlView (fun signedIn -> Views.layout signedIn [ Views.urlShortenerForm ])
-                    POST >=> route "/shorten" >=> handler.MustBeLoggedIn >=> handler.CreateShortUrl
+                    POST >=> route "/shorten" >=> (requiresRole "Admin" (text "You are not an administrator")) >=> handler.CreateShortUrl
                 ]
         ]
         setStatusCode 404 >=> text "Not Found" 
