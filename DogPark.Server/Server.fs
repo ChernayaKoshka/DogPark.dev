@@ -55,7 +55,7 @@ let makeWebApp (handler : Handlers) =
             route "/shorten" >=>
                 choose [
                     GET >=> handler.GenericSignedInCheck htmlView (fun signedIn -> Views.layout signedIn [ Views.urlShortenerForm ])
-                    POST >=> route "/shorten" >=> handler.CreateShortUrl
+                    POST >=> route "/shorten" >=> handler.MustBeLoggedIn >=> handler.CreateShortUrl
                 ]
         ]
         setStatusCode 404 >=> text "Not Found" 
@@ -91,11 +91,7 @@ let configureServices (services : IServiceCollection) =
             .AddIdentity<User, Role>(
                 fun options ->
                     // Password settings
-                    options.Password.RequireDigit   <- true
                     options.Password.RequiredLength <- 8
-                    options.Password.RequireNonAlphanumeric <- false
-                    options.Password.RequireUppercase <- true
-                    options.Password.RequireLowercase <- false
             )
             .AddDefaultTokenProviders()
 
