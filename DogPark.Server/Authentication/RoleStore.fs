@@ -11,7 +11,7 @@ open MySql.Data.MySqlClient
 open Dapper
 
 type MariaDBRoleStore(config : IConfiguration) =
-    let connectionString = config.GetConnectionString("MariaDB")
+    let connectionString = config.GetValue "MariaDB"
     interface IRoleStore<Role> with
         member this.CreateAsync (role: Role, cancellationToken: CancellationToken) : Task<IdentityResult> = task {
             cancellationToken.ThrowIfCancellationRequested()
