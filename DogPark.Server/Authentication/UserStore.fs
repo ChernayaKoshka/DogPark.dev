@@ -5,11 +5,16 @@ open Microsoft.AspNetCore.Identity
 open System
 open System.Threading
 open System.Threading.Tasks
+open System.Linq
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open Microsoft.Extensions.Configuration
 open MySqlConnector 
 open MySql.Data.MySqlClient
 open Dapper
+
+let private roleFromName (con : MySqlConnection) (name : string) = task {
+    return! con.QuerySingleAsync<Role>(@"SELECT * FROM role WHERE Name = @Name", {| Name = name |})
+}
 
 type MariaDBStore(config : IConfiguration) =
     let connectionString = config.GetValue("MariaDB")
@@ -92,3 +97,65 @@ type MariaDBStore(config : IConfiguration) =
         member this.SetPasswordHashAsync(user: User, passwordHash: string, cancellationToken: CancellationToken): Task = 
             user.PasswordHash <- passwordHash
             Task.CompletedTask
+
+    interface IUserRoleStore<User> with
+        member this.AddToRoleAsync(user: User, roleName: string, cancellationToken: CancellationToken): Task =
+            let doThing = task {
+                    cancellationToken.ThrowIfCancellationRequested()
+                    use con = new MySqlConnection(connectionString)
+                    do! con.OpenAsync()
+                    let! role = roleFromName con roleName
+                    let! _ = con.ExecuteAsync(@"INSERT INTO user_role (User, Role) VALUES (@User, @Role)", {| User = user.User; Role = role.Role |})
+                    return ()
+            }
+            doThing.Wait()
+            Task.CompletedTask
+
+        member this.GetRolesAsync(user: User, cancellationToken: CancellationToken): Task<Collections.Generic.IList<string>> = task {
+            cancellationToken.ThrowIfCancellationRequested()
+            use con = new MySqlConnection(connectionString)
+            do! con.OpenAsync()
+            let! res = 
+                con.QueryAsync<string>(
+                    @"
+                    SELECT Name FROM role
+                    JOIN user_role ur ON ur.Role = role.Role
+                    WHERE ur.User = @User
+                    ", 
+                    {| User = user.User |})
+            return res.ToList() :> Collections.Generic.IList<string>
+        }
+
+        member this.GetUsersInRoleAsync(roleName: string, cancellationToken: CancellationToken): Task<Collections.Generic.IList<User>> = task {
+            cancellationToken.ThrowIfCancellationRequested()
+            use con = new MySqlConnection(connectionString)
+            do! con.OpenAsync()
+            let! res = 
+                con.QueryAsync<User>(
+                    @"
+                    SELECT user.* FROM user user
+                    JOIN user_role ur ON ur.User = user.User
+                    JOIN role r ON ur.Role = r.Role
+                    WHERE r.Name = @RoleName
+                    ",
+                    {| RoleName = roleName |})
+            return res.ToList() :> Collections.Generic.IList<User>
+        }
+        member this.IsInRoleAsync(user: User, roleName: string, cancellationToken: CancellationToken): Task<bool> = task {
+            cancellationToken.ThrowIfCancellationRequested()
+            use con = new MySqlConnection(connectionString)
+            do! con.OpenAsync()
+            return!
+                con.QuerySingleAsync<bool>(
+                    @"
+                    SELECT COUNT(*) > 0 FROM user user
+                    JOIN user_role ur ON ur.User = user.User
+                    JOIN role r ON ur.Role = r.Role
+                    WHERE r.Name = @RoleName
+                    ",
+                    {| RoleName = roleName |})
+        }
+            
+        member this.RemoveFromRoleAsync(user: User, roleName: string, cancellationToken: CancellationToken): Task = 
+            failwith "Not Implemented"
+ 
