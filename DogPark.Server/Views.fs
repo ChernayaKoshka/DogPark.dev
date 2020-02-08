@@ -2,7 +2,7 @@ module DogPark.Views
 open Giraffe.GiraffeViewEngine
 open DogPark.Authentication
 
-let layout (content: XmlNode list) =
+let layout (isSignedIn: bool) (content: XmlNode list) =
     html [] [
         head [] [
             title []  [ encodedText "DogPark" ]
@@ -11,11 +11,17 @@ let layout (content: XmlNode list) =
                    _href "/main.css" ]
         ]
         nav [ ] [ 
-            a [ _href "/home" ] [ Text "Home" ]
-            a [ _href "/articles" ] [ Text "Articles" ]
-            a [ _href "/shorten" ] [ Text "URL Shortener" ]
-            a [ _href "/about" ] [ Text "About" ]
-            a [ _href "/login" ] [ Text "login" ]
+            yield a [ _href "/home" ] [ Text "Home" ]
+            yield a [ _href "/articles" ] [ Text "Articles" ]
+            yield a [ _href "/shorten" ] [ Text "URL Shortener" ]
+            yield a [ _href "/about" ] [ Text "About" ]
+            if isSignedIn then 
+                yield a [ _href "/logout" ] [ Text "logout" ]
+            else 
+                yield! [ 
+                    a [ _href "/login" ] [ Text "login" ] 
+                    a [ _href "/register" ] [ Text "Register" ] 
+                ]
          ]
         body [] content
     ]
@@ -33,7 +39,7 @@ let registerPage =
             ]
             input [ _type "submit" ]
         ]
-    ] |> layout
+    ] |> layout false
 
 let loginPage (loginFailed : bool) =
     [
@@ -50,7 +56,7 @@ let loginPage (loginFailed : bool) =
             ]
             input [ _type "submit" ]
         ]
-    ] |> layout
+    ] |> layout false
 
 let userPage (user : User) =
     [
@@ -58,15 +64,15 @@ let userPage (user : User) =
             sprintf "User name: %s" user.UserName
             |> str
         ]
-    ] |> layout
+    ] |> layout true
 
-let about =
+let about isSignedIn =
     [
         a [ ] [
             Text "A developer who loves dogs"
         ]
     ]
-    |> layout
+    |> layout isSignedIn
 
 let partial () =
     h1 [] [ encodedText "DogPark" ]
@@ -83,14 +89,14 @@ let includeHighlightJs() =
     ]
 
 
-let articleView (article : Article) =
+let articleView isSignedIn (article : Article) =
     [
         yield! includeHighlightJs()
         partial()
         h2 [ ] [ str article.Headline ]
         h3 [ ] [ str article.Author ]
         p  [ ] [ rawText article.Body ]
-    ] |> layout
+    ] |> layout isSignedIn
 
 let articleListTable articleListItems =
     table [ ] [
@@ -125,7 +131,7 @@ let urlShortenerForm =
         div [ _id "shorteningErrors"; ] [ ]
     ]
 
-let urlShortenerSuccess short =
+let urlShortenerSuccess isSignedIn short =
     let url = sprintf "https://dogpark.dev/@%s" short
     [
         div [ ] [
@@ -133,4 +139,4 @@ let urlShortenerSuccess short =
             a [ _href url ] [ str url ]
         ]
     ]
-    |> layout
+    |> layout isSignedIn

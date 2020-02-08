@@ -29,6 +29,11 @@ type Handlers(api : Api) =
         |> (fun x -> x.ToString())
         |> text
 
+    member this.GenericSignedInCheck (handler : 'a -> HttpHandler) (view : bool -> 'a) : HttpHandler =
+        fun (next : HttpFunc) (ctx : HttpContext) -> task {
+            return! handler (view ctx.User.Identity.IsAuthenticated) next ctx
+        }
+
     member this.RegisterHandler : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) ->
             task {
@@ -79,7 +84,7 @@ type Handlers(api : Api) =
         fun next ctx -> task {
             let! article = article
             match article with
-            | Some article -> return! htmlView (Views.articleView article) next ctx
+            | Some article -> return! htmlView (Views.articleView ctx.User.Identity.IsAuthenticated article) next ctx
             | None ->  return! this.NotFound ctx
         }
 
@@ -98,7 +103,7 @@ type Handlers(api : Api) =
                     |> Seq.map Views.articleListItem
                     |> Views.articleListTable
                     |> List.singleton
-                    |> Views.layout)
+                    |> Views.layout ctx.User.Identity.IsAuthenticated)
                     next 
                     ctx         
         }
@@ -140,7 +145,7 @@ type Handlers(api : Api) =
                 let! result = api.CreateShortUrl uri.AbsoluteUri
                 match result with
                 | Ok short ->
-                    return! htmlView (Views.urlShortenerSuccess short) next ctx
+                    return! htmlView (Views.urlShortenerSuccess ctx.User.Identity.IsAuthenticated short) next ctx
                 | Error err ->
                     return! ServerErrors.internalError (text err) next ctx
             | Error err ->

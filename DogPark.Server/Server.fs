@@ -31,7 +31,7 @@ let makeWebApp (handler : Handlers) =
                 route "/articles" >=> handler.ShowArticleList
                 route "/"         >=> redirectTo true "/article/1"
                 route "/home"     >=> redirectTo true "/article/1"
-                route "/about"    >=> htmlView Views.about
+                route "/about"    >=> handler.GenericSignedInCheck htmlView Views.about
 
                 
                 route "/register" >=> htmlView Views.registerPage
@@ -54,7 +54,7 @@ let makeWebApp (handler : Handlers) =
                 ])
             route "/shorten" >=>
                 choose [
-                    GET >=> htmlView (Views.layout [ Views.urlShortenerForm ])
+                    GET >=> handler.GenericSignedInCheck htmlView (fun signedIn -> Views.layout signedIn [ Views.urlShortenerForm ])
                     POST >=> route "/shorten" >=> handler.CreateShortUrl
                 ]
         ]
@@ -124,6 +124,9 @@ let main args =
             .AddEnvironmentVariables(prefix = "ASPNETCORE_")
             .AddCommandLine(args)
             .Build()
+
+    for test in config.AsEnumerable() do
+        printfn "%A" test
 
     let configureApp = 
         "MariaDB"
