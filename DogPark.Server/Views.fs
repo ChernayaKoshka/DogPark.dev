@@ -10,7 +10,7 @@ let layout (isSignedIn: bool) (content: XmlNode list) =
                    _type "text/css"
                    _href "/main.css" ]
         ]
-        nav [ ] [ 
+        nav [ _class "main-navbar" ] [ 
             yield a [ _href "/home" ] [ Text "Home" ]
             yield a [ _href "/articles" ] [ Text "Articles" ]
             yield a [ _href "/shorten" ] [ Text "URL Shortener" ]
@@ -23,7 +23,7 @@ let layout (isSignedIn: bool) (content: XmlNode list) =
                     a [ _href "/register" ] [ Text "Register" ] 
                 ]
          ]
-        body [] content
+        body [ _class "content-centered" ] content
     ]
 
 let registerPage =
