@@ -99,7 +99,7 @@ let articleView isSignedIn (article : Article) =
     ] |> layout isSignedIn
 
 let articleListTable articleListItems =
-    table [ ] [
+    table [ _class "article-table" ] [
         yield
             tr [ ] [ 
                 th [ ] [ Text "Headline" ]

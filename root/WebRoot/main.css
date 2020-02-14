@@ -27,3 +27,15 @@ body {
 .hidden {
     display: none;
 }
+
+.article-table {
+    width: 100%;
+    margin: auto;
+    max-width: 400px;
+    border-collapse: collapse;
+}
+
+.article-table td, th {
+    border-bottom: 1px solid gray;
+    padding: .5em;
+}
