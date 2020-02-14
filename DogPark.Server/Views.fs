@@ -16,10 +16,10 @@ let layout (isSignedIn: bool) (content: XmlNode list) =
             yield a [ _href "/shorten" ] [ Text "URL Shortener" ]
             yield a [ _href "/about" ] [ Text "About" ]
             if isSignedIn then 
-                yield a [ _href "/logout" ] [ Text "logout" ]
+                yield a [ _href "/logout" ] [ Text "Logout" ]
             else 
                 yield! [ 
-                    a [ _href "/login" ] [ Text "login" ] 
+                    a [ _href "/login" ] [ Text "Login" ] 
                     a [ _href "/register" ] [ Text "Register" ] 
                 ]
          ]
