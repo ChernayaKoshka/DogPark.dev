@@ -38,7 +38,7 @@ let registerPage =
                 label [] [ str "Password:" ]
                 input [ _name "Password"; _type "password" ]
             ]
-            input [ _type "submit"; _value "Login" ]
+            input [ _type "submit"; _value "Register" ]
         ]
     ] |> layout false
 
@@ -55,7 +55,7 @@ let loginPage (loginFailed : bool) =
                 label [] [ str "Password:" ]
                 input [ _name "Password"; _type "password" ]
             ]
-            input [ _type "submit" ]
+            input [ _type "submit"; _value "Login" ]
         ]
     ] |> layout false
 
