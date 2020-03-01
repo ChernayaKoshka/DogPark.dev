@@ -69,6 +69,8 @@ type Handlers(api : Api) =
                 return! (user |> Views.userPage |> htmlView) next ctx
             }
 
+    member this.MustBeAdmin = (requiresRole "Admin" (text "You are not an administrator"))
+
     member this.MustBeLoggedIn : HttpHandler =
         requiresAuthentication (redirectTo false "/login")
 
