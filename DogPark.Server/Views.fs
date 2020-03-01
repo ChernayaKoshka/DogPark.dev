@@ -13,15 +13,16 @@ let layout (isSignedIn: bool) (content: XmlNode list) =
         nav [ _class "main-navbar" ] [ 
             yield a [ _href "/home" ] [ Text "Home" ]
             yield a [ _href "/articles" ] [ Text "Articles" ]
-            yield a [ _href "/shorten" ] [ Text "URL Shortener" ]
-            yield a [ _href "/about" ] [ Text "About" ]
             if isSignedIn then 
+                yield a [ _href "/shorten" ] [ Text "URL Shortener" ]
+                yield a [ _href "/account" ] [ Text "My Account" ]
                 yield a [ _href "/logout" ] [ Text "Logout" ]
             else 
                 yield! [ 
                     a [ _href "/login" ] [ Text "Login" ] 
                     a [ _href "/register" ] [ Text "Register" ] 
                 ]
+            yield a [ _href "/about" ] [ Text "About" ]
          ]
         body [ _class "content-centered" ] content
     ]
@@ -37,7 +38,7 @@ let registerPage =
                 label [] [ str "Password:" ]
                 input [ _name "Password"; _type "password" ]
             ]
-            input [ _type "submit" ]
+            input [ _type "submit"; _value "Login" ]
         ]
     ] |> layout false
 
@@ -126,10 +127,14 @@ let urlShortenerForm =
                 label [ ] [ str "Long Url: " ]
                 input [ _type "text"; _id "LongUrl"; _name "LongUrl" ]
             ]
-            input [ _type "Submit" ]
+            input [ _type "Submit"; _value "Shorten!" ]
         ]
         div [ _id "shorteningErrors"; ] [ ]
     ]
+
+let urlShortenerPage isSignedIn =
+    [ urlShortenerForm ]
+    |> layout isSignedIn
 
 let urlShortenerSuccess isSignedIn short =
     let url = sprintf "https://dogpark.dev/@%s" short
