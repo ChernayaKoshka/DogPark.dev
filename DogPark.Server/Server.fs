@@ -33,12 +33,10 @@ let makeWebApp (handler : Handlers) =
                 route "/home"     >=> redirectTo true "/article/1"
                 route "/about"    >=> handler.GenericSignedInCheck htmlView Views.about
 
-                
                 route "/register" >=> htmlView Views.registerPage
                 route "/login"    >=> htmlView (Views.loginPage false)
-
                 route "/logout"   >=> handler.MustBeLoggedIn >=> handler.LogoutHandler
-                route "/user"     >=> handler.MustBeLoggedIn >=> handler.UserHandler
+                route "/account"  >=> handler.MustBeLoggedIn >=> handler.UserHandler
             ]
         POST >=>
             choose [
@@ -54,8 +52,8 @@ let makeWebApp (handler : Handlers) =
                 ])
             route "/shorten" >=>
                 choose [
-                    GET >=> handler.GenericSignedInCheck htmlView (fun signedIn -> Views.layout signedIn [ Views.urlShortenerForm ])
-                    POST >=> route "/shorten" >=> (requiresRole "Admin" (text "You are not an administrator")) >=> handler.CreateShortUrl
+                    GET  >=> handler.MustBeAdmin >=> htmlView (Views.urlShortenerPage true)
+                    POST >=> handler.MustBeAdmin >=> handler.CreateShortUrl
                 ]
         ]
         setStatusCode 404 >=> text "Not Found" 
