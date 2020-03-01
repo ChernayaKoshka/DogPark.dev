@@ -47,7 +47,7 @@ type Handlers(api : Api) =
                 | true  ->
                     let signInManager = ctx.GetService<SignInManager<User>>()
                     do! signInManager.SignInAsync(user, true)
-                    return! redirectTo false "/user" next ctx
+                    return! redirectTo false "/account" next ctx
             }
 
     member this.LoginHandler : HttpHandler =
@@ -57,7 +57,7 @@ type Handlers(api : Api) =
                 let signInManager = ctx.GetService<SignInManager<User>>()
                 let! result = signInManager.PasswordSignInAsync(model.UserName, model.Password, true, false)
                 match result.Succeeded with
-                | true  -> return! redirectTo false "/user" next ctx
+                | true  -> return! redirectTo false "/account" next ctx
                 | false -> return! htmlView (Views.loginPage true) next ctx
             }
 
