@@ -22,10 +22,12 @@ let webRoot = Path.Combine(buildOutput, "WebRoot")
 let javascriptOutput = Path.Combine(webRoot, "scripts")
 
 Target.create "Clean" (fun _ ->
-    !! "src/**/bin"
-    ++ "src/**/obj"
+    !! "**/bin"
+    ++ "**/obj"
+    -- "**/.fable/**"
+    -- "**/node_modules/**"
     ++ buildOutput
-    |> Shell.cleanDirs 
+    |> Shell.cleanDirs
 )
 
 Target.create "Restore" (fun _ ->
@@ -39,7 +41,19 @@ Target.create "Restore" (fun _ ->
 
 Target.create "Build" (fun _ ->
     Trace.log "Building JS dependencies..."
-    Yarn.exec (sprintf "fable-splitter DogPark.Client -o %s --commonjs" javascriptOutput) id
+    Yarn.exec (sprintf "fable-splitter DogPark.Client --outDir %s --allFiles" javascriptOutput) id
+
+    Trace.log @"Fixing imports... >:\"
+    !! (sprintf "%s/**/*.js" javascriptOutput)
+    |> Seq.iter (fun path ->
+      path
+      |> sprintf "Fixing %s"
+      |> Trace.log
+
+      let data = File.ReadAllText(path)
+      let fixedData = Regex.Replace(data, @"(^\s*import .*? from\s*"".*?)"";", @"$1.js"";", RegexOptions.Multiline)
+      File.WriteAllText(path, fixedData)
+    )
 
     Trace.log "Building .NET projects..."
     !! "**/*.*proj"
@@ -47,15 +61,15 @@ Target.create "Build" (fun _ ->
     -- "**/node_modules/**"
     -- "**/DogPark.Client/**"
     |> Seq.iter (
-        DotNet.build (fun bo -> 
-          { bo with 
+        DotNet.build (fun bo ->
+          { bo with
               NoRestore = true
               OutputPath = Some buildOutput}))
 
     Trace.log "Removing the annoying language resources..."
     Directory.GetDirectories(buildOutput)
     |> Seq.filter (fun dir -> Regex.IsMatch(dir, @"[\\\\/][a-z]{2}(?:-[A-z]{2,})?$"))
-    |> Shell.deleteDirs         
+    |> Shell.deleteDirs
 )
 
 Target.create "Run" (fun _ ->
@@ -80,8 +94,7 @@ Target.create "Publish" (fun _ ->
 
 Target.create "All" ignore
 
-"Clean"
-  ==> "Restore"
+"Restore"
   ==> "Build"
   ==> "Run"
   ==> "All"
