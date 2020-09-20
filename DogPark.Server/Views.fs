@@ -6,24 +6,24 @@ let layout (isSignedIn: bool) (content: XmlNode list) =
     html [] [
         head [] [
             title []  [ encodedText "DogPark" ]
-            link [ _rel  "stylesheet"
-                   _type "text/css"
-                   _href "/main.css" ]
+            link [  _rel  "stylesheet"
+                    _type "text/css"
+                    _href "/main.css" ]
         ]
-        nav [ _class "main-navbar" ] [ 
+        nav [ _class "main-navbar" ] [
             yield a [ _href "/home" ] [ Text "Home" ]
             yield a [ _href "/articles" ] [ Text "Articles" ]
-            if isSignedIn then 
+            if isSignedIn then
                 yield a [ _href "/shorten" ] [ Text "URL Shortener" ]
                 yield a [ _href "/account" ] [ Text "My Account" ]
                 yield a [ _href "/logout" ] [ Text "Logout" ]
-            else 
-                yield! [ 
-                    a [ _href "/login" ] [ Text "Login" ] 
-                    a [ _href "/register" ] [ Text "Register" ] 
+            else
+                yield! [
+                    a [ _href "/login" ] [ Text "Login" ]
+                    a [ _href "/register" ] [ Text "Register" ]
                 ]
             yield a [ _href "/about" ] [ Text "About" ]
-         ]
+        ]
         body [ _class "content-centered" ] content
     ]
 
@@ -80,8 +80,8 @@ let partial () =
 
 let includeHighlightJs() =
     [
-        link [ 
-            _rel "stylesheet" 
+        link [
+            _rel "stylesheet"
             _href "//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/default.min.css"
         ]
         script [ _src "//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js" ] [ ]
@@ -102,7 +102,7 @@ let articleView isSignedIn (article : Article) =
 let articleListTable articleListItems =
     table [ _class "article-table" ] [
         yield
-            tr [ ] [ 
+            tr [ ] [
                 th [ ] [ Text "Headline" ]
                 th [ ] [ Text "Author" ]
             ]
@@ -110,9 +110,9 @@ let articleListTable articleListItems =
     ]
 
 let articleListItem (article : DBArticle) =
-    tr [ ] [ 
-        td [ ] [ 
-            a [ _href (sprintf "/article/%d" article.Article) ] [ 
+    tr [ ] [
+        td [ ] [
+            a [ _href (sprintf "/article/%d" article.Article) ] [
                 Text article.Headline
             ]
         ]
@@ -144,4 +144,12 @@ let urlShortenerSuccess isSignedIn short =
             a [ _href url ] [ str url ]
         ]
     ]
+    |> layout isSignedIn
+
+let tetrisView isSignedIn =
+    div [ ] [
+        script [ _src "./scripts/Tetris.js"; _type "module" ] [ ]
+        canvas [ _id "tetris"; ] [ ]
+    ]
+    |> List.singleton
     |> layout isSignedIn
