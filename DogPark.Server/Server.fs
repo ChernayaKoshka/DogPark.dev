@@ -37,6 +37,8 @@ let makeWebApp (handler : Handlers) =
                 route "/login"    >=> htmlView (Views.loginPage false)
                 route "/logout"   >=> handler.MustBeLoggedIn >=> handler.LogoutHandler
                 route "/account"  >=> handler.MustBeLoggedIn >=> handler.UserHandler
+
+                route "/tetris"   >=> htmlView (Views.tetrisView false)
             ]
         POST >=>
             choose [
@@ -56,7 +58,7 @@ let makeWebApp (handler : Handlers) =
                     POST >=> handler.MustBeAdmin >=> handler.CreateShortUrl
                 ]
         ]
-        setStatusCode 404 >=> text "Not Found" 
+        setStatusCode 404 >=> text "Not Found"
     ]
 
 // ---------------------------------
@@ -84,7 +86,7 @@ let configureApp (handlers : Handlers) (app : IApplicationBuilder) =
 let configureServices (services : IServiceCollection) =
     ignore <| services.AddTransient<IUserStore<User>, MariaDBStore>()
     ignore <| services.AddTransient<IRoleStore<Role>, MariaDBRoleStore>()
-    ignore <| 
+    ignore <|
         services
             .AddIdentity<User, Role>(
                 fun options ->
@@ -101,9 +103,9 @@ let configureServices (services : IServiceCollection) =
                 options.LogoutPath <- PathString "/logout"
         )
 
-    ignore <| services.AddCors()        
+    ignore <| services.AddCors()
     ignore <| services.AddGiraffe()
-    ignore <| services.Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) -> 
+    ignore <| services.Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) ->
         options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto)
 
 let configureLogging (builder : ILoggingBuilder) =
@@ -113,7 +115,7 @@ let configureLogging (builder : ILoggingBuilder) =
 
 [<EntryPoint>]
 let main args =
-    let config = 
+    let config =
         ConfigurationBuilder()
             .AddEnvironmentVariables(prefix = "ASPNETCORE_")
             .AddCommandLine(args)
@@ -122,7 +124,7 @@ let main args =
     for test in config.AsEnumerable() do
         printfn "%A" test
 
-    let configureApp = 
+    let configureApp =
         "MariaDB"
         |> config.GetValue
         |> Api
