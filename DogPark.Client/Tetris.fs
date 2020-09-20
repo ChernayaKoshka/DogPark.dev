@@ -7,8 +7,8 @@ open System
 open Fable.Core
 
 // Standard Tetris board is 10w x 20h
-let boardWidth = 3.
-let boardHeight = 3.
+let boardWidth = 30.
+let boardHeight = 5.
 let blockDimension = 20. // 20x20 pixels
 
 // to canvas dimensions
@@ -59,10 +59,48 @@ let directionAsVector direction =
     | Right -> { X = 1; Y = 0 }
     | Down -> { X = 0; Y = 1 }
 
+let IOffsets = [| { X = 0; Y = 0; }; { X = 0; Y = 0; }; { X = 0; Y = 0; }; { X = 0; Y = 0  }; |]
+let IPiece =
+    {
+        Origin = { X = 0; Y = 0 }
+        Pivot = { X = 2; Y = 2 }
+        Offsets = IOffsets
+        OffsetIndex = 0
+        Blocks =
+            [|
+                { X = 1; Y = 2; }; { X = 2; Y = 2; }; { X = 3; Y = 2; }; { X = 4; Y = 2 }
+            |]
+    }
+
 let JLSTZOffsets = [| for _ = 0 to 3 do yield { X = 0; Y = 0 } |]
-let IOffsets = [| { X = 0; Y = 0; }; { X = -1; Y = 0; }; { X = -1; Y = 1;  }; { X = 0; Y = 1  }; |]
-//let OOffsets = [| { X = -2; Y = 0; }; { X = 0; Y = -3  }; { X = 3; Y = -1; }; { X = 1; Y = 2 }; |]
-let OOffsets = [| { X = 0; Y = 0; }; { X = 1; Y = 0  }; { X = 1; Y = -1; }; { X = 0; Y = -1 }; |]
+
+let JPiece =
+    {
+        Origin = { X = 0; Y = 0 }
+        Pivot = { X = 1; Y = 1 }
+        Offsets = JLSTZOffsets
+        OffsetIndex = 0
+        Blocks =
+            [|
+                { X = 0; Y = 0; };
+                { X = 0; Y = 1; }; { X = 1; Y = 1; }; { X = 2; Y = 1 }
+            |]
+    }
+
+let LPiece =
+    {
+        Origin = { X = 0; Y = 0 }
+        Pivot = { X = 1; Y = 1 }
+        Offsets = JLSTZOffsets
+        OffsetIndex = 0
+        Blocks =
+            [|
+                                                      { X = 2; Y = 0; };
+                { X = 0; Y = 1; }; { X = 1; Y = 1; }; { X = 2; Y = 1; }
+            |]
+    }
+
+let OOffsets = [| { X = 0; Y = 0; }; { X = -1; Y = 0  }; { X = -1; Y = -1; }; { X = 0; Y = -1 }; |]
 let OPiece =
     {
         Origin = { X = 0; Y = 0 }
@@ -71,23 +109,53 @@ let OPiece =
         OffsetIndex = 0
         Blocks =
             [|
-                { X = 1; Y = 0; }; { X = 2; Y = 0; }
-                { X = 1; Y = 1; }; { X = 2; Y = 1; }
+                { X = 0; Y = 0; }; { X = 1; Y = 0; }
+                { X = 0; Y = 1; }; { X = 1; Y = 1; }
             |]
     }
 
-(*
-        X
-        X
-       XX
+let SPiece =
+    {
+        Origin = { X = 0; Y = 0 }
+        Pivot = { X = 1; Y = 1 }
+        Offsets = JLSTZOffsets
+        OffsetIndex = 0
+        Blocks =
+            [|
+                                   { X = 1; Y = 0; }; { X = 2; Y = 0; };
+                { X = 0; Y = 1; }; { X = 1; Y = 1; };
+            |]
+    }
 
-       X
-       XXX
-*)
+let TPiece =
+    {
+        Origin = { X = 0; Y = 0 }
+        Pivot = { X = 1; Y = 1 }
+        Offsets = JLSTZOffsets
+        OffsetIndex = 0
+        Blocks =
+            [|
+                                   { X = 1; Y = 0; };
+                { X = 0; Y = 1; }; { X = 1; Y = 1; }; { X = 2; Y = 1; };
+            |]
+    }
+
+let ZPiece =
+    {
+        Origin = { X = 0; Y = 0 }
+        Pivot = { X = 1; Y = 1 }
+        Offsets = JLSTZOffsets
+        OffsetIndex = 0
+        Blocks =
+            [|
+                { X = 0; Y = 0; }; { X = 1; Y = 0; };
+                                   { X = 1; Y = 1; }; { X = 2; Y = 1; };
+            |]
+    }
+
 
 let placeAtPoint (point: Point) (piece: Tetromino) =
     { piece with Origin = point }
-
 
 let move direction (point: Block) =
     let vector = directionAsVector direction
@@ -119,7 +187,7 @@ let rotatePiece (piece: Tetromino) =
                         X = block.X - piece.Pivot.X - piece.Offsets.[piece.OffsetIndex].X
                         Y = block.Y - piece.Pivot.Y - piece.Offsets.[piece.OffsetIndex].Y
                     }
-                let rotated = rotatePoint90DegreesCW offset
+                let rotated = rotatePoint90Degrees offset
                 {
                     X = rotated.X + piece.Pivot.X + piece.Offsets.[newOffsetIndex].X
                     Y = rotated.Y + piece.Pivot.Y + piece.Offsets.[newOffsetIndex].Y
@@ -143,10 +211,6 @@ let drawBlock style block =
         (blockDimension - 1.),
         (blockDimension - 1.))
 
-(*
-    TODO: FIGURE OUT STUPID FUCKING INVERSE Y AXIS SHIT. TRANSLATE CARTESIAN TO SCREEN COORDS
-*)
-
 let drawPiece style (piece: Tetromino) =
     piece.Blocks
     |> Array.map (fun block ->
@@ -155,12 +219,7 @@ let drawPiece style (piece: Tetromino) =
             Y = block.Y + piece.Origin.Y
         })
     |> Array.iter (drawBlock style)
-    // context.fillStyle <- !^"black"
-    // context.font <- "30px Arial"
-    // context.fillText(
-    //     sprintf "%d: (%d, %d)" piece.OffsetIndex piece.Offsets.[piece.OffsetIndex].X piece.Offsets.[piece.OffsetIndex].Y,
-    //     ((float piece.Blocks.[0].X + float piece.Origin.X) * blockDimension + 1.),
-    //     ((float piece.Blocks.[0].Y + float piece.Origin.Y) * blockDimension + 1. + blockDimension + 1.))
+
     let tx = (float piece.Origin.X + float piece.Pivot.X) * blockDimension
     let ty = (float piece.Origin.Y + float piece.Pivot.Y) * blockDimension
     drawLine !^"green" tx ty (tx + 1.) (ty + 1.)
@@ -184,10 +243,27 @@ let iToC (piece: Tetromino) : U3<string, CanvasGradient, CanvasPattern> =
     | 2 -> !^"blue"
     | 3 -> !^"yellow"
 
-let rec test piece () =
+let rec test pieces () =
     // drawPiece (iToC piece) piece
     // let next = movePiece Down piece
-    drawPiece (iToC piece) piece
-    window.setTimeout(test (rotatePiece piece), TimeSpan.FromSeconds(1.).TotalMilliseconds |> int)
+    pieces
+    |> Array.iter (fun piece -> drawPiece (iToC piece) piece)
 
-test (placeAtPoint { X = 0; Y = 0; } OPiece) ()
+    let next =
+        pieces
+        |> Array.map rotatePiece
+
+    window.setTimeout(test next, TimeSpan.FromSeconds(1.).TotalMilliseconds |> int)
+
+let pieces =
+    [|
+        yield placeAtPoint { X =  0; Y = 0; } IPiece
+        yield placeAtPoint { X =  6; Y = 0; } JPiece
+        yield placeAtPoint { X = 10; Y = 0; } LPiece
+        yield placeAtPoint { X = 14; Y = 0; } OPiece
+        yield placeAtPoint { X = 18; Y = 0; } SPiece
+        yield placeAtPoint { X = 22; Y = 0; } TPiece
+        yield placeAtPoint { X = 26; Y = 0; } ZPiece
+    |]
+
+test pieces ()
