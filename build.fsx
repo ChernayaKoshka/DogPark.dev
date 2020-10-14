@@ -73,13 +73,7 @@ Target.create "Build" (fun _ ->
 )
 
 Target.create "Run" (fun _ ->
-
-  File.checkExists "mariadb.txt"
-
-  // could potentially be used to inject arguments. But, if they have access to your filesystem, you're fucked anyway ¯\_(ツ)_/¯
-  let connection = File.readLine "mariadb.txt"
-
-  CreateProcess.fromRawCommandLine (Path.Combine(buildOutput, "server.exe")) (sprintf "--environment Development --MariaDB \"%s\"" connection )
+  CreateProcess.fromRawCommandLine (Path.Combine(buildOutput, "server.exe")) String.Empty
   |> CreateProcess.withWorkingDirectory buildOutput
   |> Proc.run
   |> ignore
