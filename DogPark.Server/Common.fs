@@ -14,7 +14,8 @@ open System.Threading.Tasks
 Directory.SetCurrentDirectory("bin/Debug/netcoreapp3.1/")
 #endif
 
-let contentRoot = Directory.GetCurrentDirectory()
+let contentRoot = AppContext.BaseDirectory
+let logRoot     = Path.Combine(contentRoot, "Logs")
 let webRoot     = Path.Combine(contentRoot, "WebRoot")
 let articleRoot = Path.Combine(contentRoot, "DogPark-Articles")
 
@@ -32,25 +33,25 @@ let topLevelDomains =
     |> File.ReadAllLines
     |> Array.filter (fun str -> str.StartsWith("#") |> not || String.IsNullOrWhiteSpace(str))
 
-let private tldsRegex = 
+let private tldsRegex =
     topLevelDomains
     |> String.concat "|"
     |> sprintf @"\.(?:%s)"
 
 let tryMakeUrl (url : string) =
-    let url = 
+    let url =
         if not <| Regex.IsMatch(url, "^https?://") then
             "http://" + url
         else
             url
     if Uri.IsWellFormedUriString(url, UriKind.Absolute) then
         match Uri.TryCreate(url, UriKind.Absolute) with
-        | (true, uri) -> 
+        | (true, uri) ->
             if Regex.IsMatch(uri.Host, tldsRegex + "$", RegexOptions.IgnoreCase) then
                 Ok uri
             else
                 Error "Invalid or missing domain!"
-        | _ -> 
+        | _ ->
             Error "URL is not well-formed!"
     else
         Error "URL is not well-formed!"
@@ -72,6 +73,6 @@ let tryMakeUrl (url : string) =
 //         @"https://w"
 //         @"https://sdfasdp.ppppppppppp"
 //     ]
-// 
+//
 // tests
 // |> List.choose isValidUrl
