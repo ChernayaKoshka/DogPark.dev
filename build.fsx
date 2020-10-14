@@ -93,7 +93,8 @@ Target.create "All" ignore
   ==> "Run"
   ==> "All"
 
-"Build"
+"Clean"
+  ==> "Build"
   ==> "Publish"
 
 Target.runOrDefault "All"
