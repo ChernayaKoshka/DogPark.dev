@@ -63,6 +63,7 @@ Target.create "Build" (fun _ ->
     |> Seq.iter (
         DotNet.build (fun bo ->
           { bo with
+              Configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
               NoRestore = true
               OutputPath = Some buildOutput}))
 
