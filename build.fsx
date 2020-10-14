@@ -55,7 +55,8 @@ Target.create "Build" (fun _ ->
       File.WriteAllText(path, fixedData)
     )
 
-    Trace.log "Building .NET projects..."
+    let configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
+    Trace.logf "Building .NET projects (%O)..." configuration
     !! "**/*.*proj"
     -- "**/.fable/**"
     -- "**/node_modules/**"
@@ -63,7 +64,7 @@ Target.create "Build" (fun _ ->
     |> Seq.iter (
         DotNet.build (fun bo ->
           { bo with
-              Configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
+              Configuration = configuration
               NoRestore = true
               OutputPath = Some buildOutput}))
 
