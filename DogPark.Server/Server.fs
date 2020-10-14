@@ -15,7 +15,11 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Hosting.WindowsServices
 open System
+open Serilog
+open Serilog.AspNetCore
+open Serilog.Events
 
 // ---------------------------------
 // Web app
@@ -65,11 +69,13 @@ let makeWebApp (handler : Handlers) =
 // Config and Main
 // ---------------------------------
 
+
 let configureCors (builder : CorsPolicyBuilder) =
-    builder.WithOrigins("http://localhost:8080")
-           .AllowAnyMethod()
-           .AllowAnyHeader()
-           |> ignore
+    builder
+        .WithOrigins("http://localhost:8080")
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+    |> ignore
 
 let configureApp (handlers : Handlers) (app : IApplicationBuilder) =
     let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
@@ -84,62 +90,77 @@ let configureApp (handlers : Handlers) (app : IApplicationBuilder) =
         .UseGiraffe(makeWebApp handlers)
 
 let configureServices (services : IServiceCollection) =
-    ignore <| services.AddTransient<IUserStore<User>, MariaDBStore>()
-    ignore <| services.AddTransient<IRoleStore<Role>, MariaDBRoleStore>()
-    ignore <|
-        services
-            .AddIdentity<User, Role>(
-                fun options ->
-                    // Password settings
-                    options.Password.RequiredLength <- 8
-            )
-            .AddDefaultTokenProviders()
-
-    ignore <|
-        services.ConfigureApplicationCookie(
+    services
+        .AddTransient<IUserStore<User>, MariaDBStore>()
+        .AddTransient<IRoleStore<Role>, MariaDBRoleStore>()
+        .ConfigureApplicationCookie(
             fun options ->
                 options.ExpireTimeSpan <- TimeSpan.FromDays 150.0
                 options.LoginPath <- PathString "/login"
                 options.LogoutPath <- PathString "/logout"
         )
+        .AddCors()
+        .Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) ->
+            options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto)
+        .AddGiraffe()
+        .AddIdentity<User, Role>(
+            fun options ->
+                // Password settings
+                options.Password.RequiredLength <- 8
+        )
+        .AddDefaultTokenProviders()
+    |> ignore
 
-    ignore <| services.AddCors()
-    ignore <| services.AddGiraffe()
-    ignore <| services.Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) ->
-        options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto)
-
-let configureLogging (builder : ILoggingBuilder) =
-    builder.AddFilter(fun l -> l.Equals LogLevel.Error)
-           .AddConsole()
-           .AddDebug() |> ignore
+let configureLogging() =
+    Log.Logger <-
+        LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .WriteTo.Console(restrictedToMinimumLevel = LogEventLevel.Debug, theme = Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code)
+            .WriteTo.File(System.IO.Path.Combine("logRoot", "server.log"), restrictedToMinimumLevel = LogEventLevel.Verbose, rollingInterval = RollingInterval.Day)
+            .CreateLogger()
 
 [<EntryPoint>]
 let main args =
+    configureLogging()
+
     let config =
         ConfigurationBuilder()
-            .AddEnvironmentVariables(prefix = "ASPNETCORE_")
-            .AddCommandLine(args)
+            .AddJsonFile("appsettings.json")
             .Build()
 
-    for test in config.AsEnumerable() do
-        printfn "%A" test
-
     let configureApp =
-        "MariaDB"
+        "mariadb"
         |> config.GetValue
         |> Api
         |> Handlers
         |> configureApp
 
-    WebHost
-        .CreateDefaultBuilder()
-        .UseConfiguration(config)
-        .UseKestrel()
-        .UseContentRoot(contentRoot)
-        .UseWebRoot(webRoot)
-        .Configure(Action<IApplicationBuilder> configureApp)
-        .ConfigureServices(configureServices)
-        .ConfigureLogging(configureLogging)
-        .Build()
-        .Run()
+    for var in config.AsEnumerable() do
+        Log.Debug(sprintf "%A" var)
+
+    try
+        try
+            Host
+                .CreateDefaultBuilder()
+                .ConfigureWebHostDefaults(fun webHostBuilder ->
+                    webHostBuilder
+                        .UseConfiguration(config)
+                        .Configure(configureApp)
+                        .ConfigureServices(configureServices)
+                        .UseSerilog()
+                        .UseKestrel()
+                        .UseWebRoot(webRoot)
+                    |> ignore
+                )
+                .UseContentRoot(contentRoot)
+                .UseWindowsService()
+                .Build()
+                .Run()
+        with
+        | ex ->
+            Log.Fatal(ex, "Host terminated unexpectedly")
+    finally
+        Log.CloseAndFlush()
     0
