@@ -6,6 +6,7 @@
 yarn.lock
 .fable/
 publish.bat
+published/
 output/
 **/DogPark-Articles/*.md
 appsettings*json
