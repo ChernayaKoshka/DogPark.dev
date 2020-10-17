@@ -5,14 +5,6 @@ open System.IO
 open System
 open Markdig
 open System.Text.RegularExpressions
-open FSharp.Control.Tasks.V2.ContextInsensitive
-open MySql.Data.MySqlClient
-open System.Threading.Tasks
-
-#if DEBUG
-// !@#$ing stupid that I have to do this
-Directory.SetCurrentDirectory("bin/Debug/netcoreapp3.1/")
-#endif
 
 let contentRoot = AppContext.BaseDirectory
 let logRoot     = Path.Combine(contentRoot, "Logs")
