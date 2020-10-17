@@ -15,7 +15,6 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Hosting.WindowsServices
 open System
 open Serilog
 open Serilog.AspNetCore
@@ -121,14 +120,29 @@ let configureLogging() =
             .WriteTo.File(System.IO.Path.Combine(logRoot, "server.log"), restrictedToMinimumLevel = LogEventLevel.Verbose, rollingInterval = RollingInterval.Day)
             .CreateLogger()
 
+type EExitCode =
+    | Success = 0
+    | Failure = -1
+    | ConfigurationFailure = -2
+
 [<EntryPoint>]
 let main args =
     configureLogging()
 
     let config =
-        ConfigurationBuilder()
-            .AddJsonFile("appsettings.json")
-            .Build()
+        try
+            ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", false)
+                .AddCommandLine(args)
+                .Build()
+        with
+        | e ->
+            Log.Fatal(e, "ConfigurationException: ")
+            Log.CloseAndFlush()
+            exit -2
+
+    if config.GetValue<bool> "validateconfig" then
+        exit 0
 
     let configureApp =
         "mariadb"
@@ -155,12 +169,12 @@ let main args =
                     |> ignore
                 )
                 .UseContentRoot(contentRoot)
-                .UseWindowsService()
                 .Build()
                 .Run()
+            0
         with
         | ex ->
             Log.Fatal(ex, "Host terminated unexpectedly")
+            -1
     finally
         Log.CloseAndFlush()
-    0
