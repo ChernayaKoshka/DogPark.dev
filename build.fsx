@@ -21,15 +21,6 @@ let buildOutput = "./output/"
 let webRoot = Path.Combine(buildOutput, "WebRoot")
 let javascriptOutput = Path.Combine(webRoot, "scripts")
 
-Target.create "Clean" (fun _ ->
-    !! "**/bin"
-    ++ "**/obj"
-    -- "**/.fable/**"
-    -- "**/node_modules/**"
-    ++ buildOutput
-    |> Shell.cleanDirs
-)
-
 Target.create "Restore" (fun _ ->
   !! "**/*.*proj"
   -- "**/.fable/**"
@@ -39,7 +30,7 @@ Target.create "Restore" (fun _ ->
   Yarn.install (fun bo -> { bo with WorkingDirectory = "./DogPark.Client/" })
 )
 
-Target.create "Build" (fun _ ->
+let build() =
     Trace.log "Building JS dependencies..."
     Yarn.exec (sprintf "fable-splitter DogPark.Client --outDir %s --allFiles" javascriptOutput) id
 
@@ -72,6 +63,22 @@ Target.create "Build" (fun _ ->
     Directory.GetDirectories(buildOutput)
     |> Seq.filter (fun dir -> Regex.IsMatch(dir, @"[\\\\/][a-z]{2}(?:-[A-z]{2,})?$"))
     |> Shell.deleteDirs
+
+Target.create "Build" (fun _ ->
+  build()
+)
+
+Target.create "Clean" (fun _ ->
+  !! "**/bin"
+  ++ "**/obj"
+  -- "**/.fable/**"
+  -- "**/node_modules/**"
+  ++ buildOutput
+  |> Shell.cleanDirs
+)
+
+Target.create "CleanedBuild" (fun _ ->
+  build()
 )
 
 Target.create "Run" (fun _ ->
@@ -96,7 +103,8 @@ Target.create "All" ignore
   ==> "All"
 
 "Clean"
-  ==> "Build"
+  ==> "Restore"
+  ==> "CleanedBuild"
   ==> "Publish"
 
 Target.runOrDefault "All"
