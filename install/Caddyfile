@@ -1,0 +1,15 @@
+www.dogpark.dev {
+  log {
+    output file ./logs/www.dogpark.dev.json
+    format json
+  }
+  reverse_proxy localhost:7777
+}
+
+dogpark.dev {
+  log {
+    output file ./logs/dogpark.dev.json
+    format json
+  }
+  reverse_proxy localhost:7777
+}

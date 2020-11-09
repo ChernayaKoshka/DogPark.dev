@@ -1,0 +1,2 @@
+# Configuration for /etc/init.d/dogpark
+dogpark_opts=""
