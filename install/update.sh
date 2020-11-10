@@ -1,4 +1,4 @@
-#! /bin/ash
+#!/bin/ash
 rc-service dogpark stop
 cp -af /mnt/media/Private/Staging/* /srv/dogpark/
 
