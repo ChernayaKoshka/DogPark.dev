@@ -16,9 +16,11 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open System
+open System.IO
 open Serilog
 open Serilog.AspNetCore
 open Serilog.Events
+open Microsoft.Extensions.FileProviders
 
 // ---------------------------------
 // Web app
@@ -42,6 +44,8 @@ let makeWebApp (handler : Handlers) =
                 route "/account"  >=> handler.MustBeLoggedIn >=> handler.UserHandler
 
                 route "/tetris"   >=> htmlView (Views.tetrisView false)
+
+                route "/bolero"   >=> (Path.Combine(webRoot, "index.html") |> htmlFile)
             ]
         POST >=>
             choose [
@@ -68,7 +72,6 @@ let makeWebApp (handler : Handlers) =
 // Config and Main
 // ---------------------------------
 
-
 let configureCors (builder : CorsPolicyBuilder) =
     builder
         .WithOrigins("http://localhost:8080")
@@ -84,6 +87,7 @@ let configureApp (handlers : Handlers) (app : IApplicationBuilder) =
         .UseHttpsRedirection()
         .UseCors(configureCors)
         .UseStaticFiles()
+        .UseStaticFiles(getBlazorFrameworkStaticFileOptions (new PhysicalFileProvider(blazorFramework)) "/_framework")
         .UseForwardedHeaders()
         .UseAuthentication()
         .UseGiraffe(makeWebApp handlers)
@@ -158,17 +162,17 @@ let main args =
         try
             Host
                 .CreateDefaultBuilder()
+                .UseContentRoot(contentRoot)
                 .ConfigureWebHostDefaults(fun webHostBuilder ->
                     webHostBuilder
+                        .UseWebRoot(webRoot)
                         .UseConfiguration(config)
                         .Configure(configureApp)
                         .ConfigureServices(configureServices)
                         .UseSerilog()
                         .UseKestrel()
-                        .UseWebRoot(webRoot)
                     |> ignore
                 )
-                .UseContentRoot(contentRoot)
                 .Build()
                 .Run()
             0
