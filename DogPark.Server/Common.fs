@@ -6,10 +6,11 @@ open System
 open Markdig
 open System.Text.RegularExpressions
 
-let contentRoot = AppContext.BaseDirectory
-let logRoot     = Path.Combine(contentRoot, "Logs")
-let webRoot     = Path.Combine(contentRoot, "WebRoot")
-let articleRoot = Path.Combine(contentRoot, "DogPark-Articles")
+let contentRoot     = AppContext.BaseDirectory
+let logRoot         = Path.Combine(contentRoot, "Logs")
+let webRoot         = Path.Combine(contentRoot, "wwwroot")
+let blazorFramework = Path.Combine(webRoot, "_framework")
+let articleRoot     = Path.Combine(contentRoot, "DogPark-Articles")
 
 let markdownPipeline = MarkdownPipelineBuilder().DisableHtml().Build()
 
