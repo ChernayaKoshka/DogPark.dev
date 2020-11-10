@@ -8,6 +8,7 @@
     </Content>
     <Compile Include="../DogPark.Shared/Shared.Types.fs" />
     <Compile Include="../DogPark.Shared/Helpers.fs" />
+    <Compile Include="Utils.fs" />
     <Compile Include="Common.fs" />
     <Compile Include="Authentication/Types.fs" />
     <Compile Include="Authentication/UserStore.fs" />
