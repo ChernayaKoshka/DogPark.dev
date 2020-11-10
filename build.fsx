@@ -17,17 +17,19 @@ open System
 
 Target.initEnvironment ()
 
-let buildOutput = "./output/"
-let webRoot = Path.Combine(buildOutput, "WebRoot")
+let buildOutput = "output/"
+let webRoot = Path.Combine(buildOutput, "wwwroot")
 let javascriptOutput = Path.Combine(webRoot, "scripts")
 
-Target.create "Restore" (fun _ ->
+let restore() =
   !! "**/*.*proj"
   -- "**/.fable/**"
   -- "**/node_modules/**"
   |> Seq.iter (DotNet.restore id)
 
-  Yarn.install (fun bo -> { bo with WorkingDirectory = "./DogPark.Client/" })
+  Yarn.install (fun bo -> { bo with WorkingDirectory = "DogPark.Client/" })
+Target.create "Restore" (fun _ ->
+  restore()
 )
 
 let build() =
@@ -52,6 +54,7 @@ let build() =
     -- "**/.fable/**"
     -- "**/node_modules/**"
     -- "**/DogPark.Client/**"
+    -- "**/Bolero*/**"
     |> Seq.iter (
         DotNet.build (fun bo ->
           { bo with
@@ -63,6 +66,29 @@ let build() =
     Directory.GetDirectories(buildOutput)
     |> Seq.filter (fun dir -> Regex.IsMatch(dir, @"[\\\\/][a-z]{2}(?:-[A-z]{2,})?$"))
     |> Shell.deleteDirs
+
+let boleroBuild() =
+  let configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
+  !! "**/Bolero*/*.*proj"
+    |> Seq.iter (fun projectPath ->
+      projectPath
+      |> DotNet.publish (fun po ->
+          { po with
+              Configuration = configuration
+              NoRestore = true
+              OutputPath = Some buildOutput
+          })
+    )
+
+  // for some reason, IsTransformWebConfigDisabled is ignored. MS can fuck right off. I'd sooner lick the nasty side of a toilet seat
+  // before trying to use IIS again
+  printfn "Removing stupid 'web.config' files since MSBuild refuses to not generate them"
+  !! (sprintf "%s/**/web.config" buildOutput)
+  |> Seq.iter File.Delete
+
+Target.create "BoleroBuild" (fun _ ->
+  boleroBuild()
+)
 
 Target.create "Build" (fun _ ->
   build()
@@ -78,6 +104,8 @@ Target.create "Clean" (fun _ ->
 )
 
 Target.create "CleanedBuild" (fun _ ->
+  restore()
+  boleroBuild()
   build()
 )
 
@@ -98,12 +126,12 @@ Target.create "Publish" (fun _ ->
 Target.create "All" ignore
 
 "Restore"
+  ==> "BoleroBuild"
   ==> "Build"
   ==> "Run"
   ==> "All"
 
 "Clean"
-  ==> "Restore"
   ==> "CleanedBuild"
   ==> "Publish"
 
