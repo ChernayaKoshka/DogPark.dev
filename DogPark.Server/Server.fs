@@ -1,8 +1,6 @@
 module DogPark.App
 
-open DogPark.Api
 open DogPark.Authentication
-open DogPark.Handlers
 open Giraffe
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
@@ -26,45 +24,8 @@ open Microsoft.Extensions.FileProviders
 // Web app
 // ---------------------------------
 
-let makeWebApp (handler : Handlers) =
+let webApp =
     choose [
-        GET >=>
-            choose [
-                routef "/@%s" handler.RedirectShortUrl
-                routef "/article/%i" handler.ShowArticleById
-
-                route "/articles" >=> handler.ShowArticleList
-                route "/"         >=> redirectTo true "/article/1"
-                route "/home"     >=> redirectTo true "/article/1"
-                route "/about"    >=> handler.GenericSignedInCheck htmlView Views.about
-
-                route "/register" >=> htmlView Views.registerPage
-                route "/login"    >=> htmlView (Views.loginPage false)
-                route "/logout"   >=> handler.MustBeLoggedIn >=> handler.LogoutHandler
-                route "/account"  >=> handler.MustBeLoggedIn >=> handler.UserHandler
-
-                route "/tetris"   >=> htmlView (Views.tetrisView false)
-
-                route "/bolero"   >=> (Path.Combine(webRoot, "index.html") |> htmlFile)
-            ]
-        POST >=>
-            choose [
-                route "/register" >=> handler.RegisterHandler
-                route "/login"    >=> handler.LoginHandler
-            ]
-        choose [
-            subRoute "/api" (
-                choose [
-                    GET >=> choose [
-                        routef "/article/%i" handler.GetArticleById
-                    ]
-                ])
-            route "/shorten" >=>
-                choose [
-                    GET  >=> handler.MustBeAdmin >=> htmlView (Views.urlShortenerPage true)
-                    POST >=> handler.MustBeAdmin >=> handler.CreateShortUrl
-                ]
-        ]
         setStatusCode 404 >=> text "Not Found"
     ]
 
@@ -79,18 +40,18 @@ let configureCors (builder : CorsPolicyBuilder) =
         .AllowAnyHeader()
     |> ignore
 
-let configureApp (handlers : Handlers) (app : IApplicationBuilder) =
+let configureApp (app : IApplicationBuilder) =
     let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
     (match env.IsDevelopment() with
     | true  -> app.UseDeveloperExceptionPage()
-    | false -> app.UseGiraffeErrorHandler handlers.Error)
+    | false -> app.UseGiraffeErrorHandler (fun e l -> e |> string |> text))
         .UseHttpsRedirection()
         .UseCors(configureCors)
         .UseStaticFiles()
         .UseStaticFiles(getBlazorFrameworkStaticFileOptions (new PhysicalFileProvider(blazorFramework)) "/_framework")
         .UseForwardedHeaders()
         .UseAuthentication()
-        .UseGiraffe(makeWebApp handlers)
+        .UseGiraffe(webApp)
 
 let configureServices (services : IServiceCollection) =
     services
@@ -147,13 +108,6 @@ let main args =
 
     if config.GetValue<bool> "validateconfig" then
         exit 0
-
-    let configureApp =
-        "mariadb"
-        |> config.GetValue
-        |> Api
-        |> Handlers
-        |> configureApp
 
     for var in config.AsEnumerable() do
         Log.Debug(sprintf "%A" var)

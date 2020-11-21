@@ -1,4 +1,4 @@
-namespace BoleroClientTest.Client
+namespace DogPark.Client
 
 open Microsoft.AspNetCore.Components.WebAssembly.Hosting
 open Bolero.Remoting.Client

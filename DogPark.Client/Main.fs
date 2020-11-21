@@ -1,4 +1,4 @@
-module BoleroClientTest.Client.Main
+module DogPark.Client.Main
 
 open Elmish
 open Bolero

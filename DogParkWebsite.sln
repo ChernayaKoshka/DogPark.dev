@@ -7,8 +7,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DogPark.Server", "DogPark.S
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DogPark.Client", "DogPark.Client\Client.fsproj", "{2AD33D3D-3650-406E-BE2A-E7BD9D0FD59A}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BoleroClientTest.Client", "BoleroClientTest.Client\BoleroClientTest.Client.fsproj", "{AB6655D4-492D-4E74-B2E1-797F11A43563}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
