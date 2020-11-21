@@ -2,10 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
+
   <ItemGroup>
-    <Content Include="../root/**/*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Compile Include="Utils.fs" />
     <Compile Include="Common.fs" />
     <Compile Include="Authentication/Types.fs" />
@@ -14,6 +12,7 @@
     <Compile Include="Types.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.30" />
     <PackageReference Include="Giraffe" Version="4.0.1" />

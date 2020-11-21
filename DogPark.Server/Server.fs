@@ -45,7 +45,6 @@ let configureApp (app : IApplicationBuilder) =
     (match env.IsDevelopment() with
     | true  -> app.UseDeveloperExceptionPage()
     | false -> app.UseGiraffeErrorHandler (fun e l -> e |> string |> text))
-        .UseHttpsRedirection()
         .UseCors(configureCors)
         .UseStaticFiles()
         .UseStaticFiles(getBlazorFrameworkStaticFileOptions (new PhysicalFileProvider(blazorFramework)) "/_framework")
