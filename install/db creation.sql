@@ -1,5 +1,8 @@
 -- Queries as written in code require `lower_case_table_names` set if being run on a case-sensitive filesystem (like Linux)
 
+CREATE DATABASE DogPark;
+USE DogPark;
+
 CREATE TABLE `article` (
     `Article` int(11) unsigned NOT NULL AUTO_INCREMENT,
     `Headline` text NOT NULL,
