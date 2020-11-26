@@ -18,7 +18,7 @@ type MariaDBRoleStore(config : IConfiguration) =
             use con = new MySqlConnection(connectionString)
             do! con.OpenAsync()
             let! id = con.QuerySingleAsync<int>(@"INSERT INTO role (Name, NormalizedName) VALUES (@Name, @NormalizedName); SELECT CAST(last_insert_id() as int)", role)
-            role.Role <- id
+            role.IDRole <- id
             return IdentityResult.Success
         }
 
@@ -26,7 +26,7 @@ type MariaDBRoleStore(config : IConfiguration) =
             cancellationToken.ThrowIfCancellationRequested()
             use con = new MySqlConnection(connectionString)
             do! con.OpenAsync()
-            let! _ = con.ExecuteAsync("DELETE FROM role WHERE Role = @Role", role)
+            let! _ = con.ExecuteAsync("DELETE FROM role WHERE IDRole = @IDRole", role)
             return IdentityResult.Success
         }
 
@@ -34,7 +34,7 @@ type MariaDBRoleStore(config : IConfiguration) =
             cancellationToken.ThrowIfCancellationRequested()
             use con = new MySqlConnection(connectionString)
             do! con.OpenAsync()
-            return! con.QuerySingleOrDefaultAsync<Role>(@"SELECT * FROM role WHERE Role = @Role", {| Role = int roleId |});
+            return! con.QuerySingleOrDefaultAsync<Role>(@"SELECT * FROM role WHERE IDRole = @IDRole", {| IDRole = int roleId |});
         }
 
         member this.FindByNameAsync (normalizedRoleName: string, cancellationToken: CancellationToken) : Task<Role> = task {
@@ -46,7 +46,7 @@ type MariaDBRoleStore(config : IConfiguration) =
             Task.FromResult role.NormalizedName
 
         member this.GetRoleIdAsync (role: Role, cancellationToken: CancellationToken) : Task<string> =
-            role.Role
+            role.IDRole
             |> string
             |> Task.FromResult
 
@@ -65,7 +65,7 @@ type MariaDBRoleStore(config : IConfiguration) =
             cancellationToken.ThrowIfCancellationRequested()
             use con = new MySqlConnection(connectionString)
             do! con.OpenAsync()
-            let! _ = con.ExecuteAsync(@"UPDATE role SET Name = @Name, NormalizedName = @NormalizedName WHERE Role = @Role", role)
+            let! _ = con.ExecuteAsync(@"UPDATE role SET Name = @Name, NormalizedName = @NormalizedName WHERE IDRole = @IDRole", role)
             return IdentityResult.Success
         }
 
