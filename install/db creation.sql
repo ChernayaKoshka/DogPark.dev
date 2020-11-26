@@ -1,52 +1,45 @@
 -- Queries as written in code require `lower_case_table_names` set if being run on a case-sensitive filesystem (like Linux)
 
-CREATE DATABASE DogPark;
+CREATE DATABASE IF NOT EXISTS DogPark;
 USE DogPark;
 
-CREATE TABLE `article` (
-    `Article` int(11) unsigned NOT NULL AUTO_INCREMENT,
-    `Headline` text NOT NULL,
-    `Author` tinytext NOT NULL,
-    `FilePath` text NOT NULL,
-    PRIMARY KEY (`Article`)
+-- BEGIN .NET CORE IDENTITY
+
+CREATE TABLE IF NOT EXISTS `User` (
+    `IDUser` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `UserName` VARCHAR(255) NOT NULL UNIQUE,
+    `NormalizedUserName` VARCHAR(255) NOT NULL UNIQUE,
+    `PasswordHash` VARCHAR(2048) NOT NULL
 );
 
-CREATE TABLE `role` (
-    `Role` int(11) NOT NULL AUTO_INCREMENT,
-    `Name` tinytext NOT NULL,
-    `NormalizedName` tinytext NOT NULL,
-    PRIMARY KEY (`Role`),
-    UNIQUE KEY `Role` (`Role`),
-    FULLTEXT KEY `NormalizedName` (`NormalizedName`)
+CREATE TABLE IF NOT EXISTS `Role` (
+    `IDRole` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `Name` VARCHAR(255) NOT NULL UNIQUE,
+    `NormalizedName` VARCHAR(255) NOT NULL UNIQUE
 );
 
-CREATE TABLE `shorturl` (
-    `shorturl` int(11) unsigned NOT NULL AUTO_INCREMENT,
-    `short` text NOT NULL,
-    `long` text NOT NULL,
-    PRIMARY KEY (`shorturl`),
-    UNIQUE KEY `short` (`short`) USING HASH,
-    UNIQUE KEY `long` (`long`) USING HASH
+CREATE TABLE IF NOT EXISTS `UserRole` (
+    `IDUserRole` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `IDUser` int NOT NULL,
+    `IDRole` int NOT NULL,
+    CONSTRAINT `userrole_iduser_fk` FOREIGN KEY (`IDUser`) REFERENCES `User` (`IDUser`) ON DELETE CASCADE,
+    CONSTRAINT `userrole_idrole_fk` FOREIGN KEY (`IDRole`) REFERENCES `Role` (`IDRole`) ON DELETE CASCADE
 );
 
-CREATE TABLE `user` (
-    `User` int(11) NOT NULL AUTO_INCREMENT,
-    `UserName` tinytext NOT NULL,
-    `NormalizedUserName` text NOT NULL,
-    `PasswordHash` text NOT NULL,
-    PRIMARY KEY (`User`),
-    UNIQUE KEY `User` (`User`),
-    UNIQUE KEY `UserName` (`UserName`) USING HASH,
-    FULLTEXT KEY `NormalizedUserName` (`NormalizedUserName`)
+-- END .NET CORE IDENTITY
+
+CREATE TABLE IF NOT EXISTS `Article` (
+    `IDArticle` int unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `IDUser` INT NOT NULL,
+    `Headline` VARCHAR(255) NOT NULL,
+    `FilePath` VARCHAR(4096) NOT NULL,
+    CONSTRAINT `article_iduser_fk` FOREIGN KEY (`IDUser`) REFERENCES `User` (`IDUser`)
 );
 
-CREATE TABLE `user_role` (
-    `UserRole` int(11) NOT NULL AUTO_INCREMENT,
-    `User` int(11) NOT NULL,
-    `Role` int(11) NOT NULL,
-    PRIMARY KEY (`UserRole`),
-    KEY `user` (`User`),
-    KEY `role` (`Role`),
-    CONSTRAINT `role_fk` FOREIGN KEY (`Role`) REFERENCES `role` (`Role`) ON DELETE CASCADE,
-    CONSTRAINT `user_fk` FOREIGN KEY (`User`) REFERENCES `user` (`User`) ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS `ShortUrl` (
+    `IDShortUrl` int unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `IDUser` INT NOT NULL,
+    `Short` VARCHAR(255) NOT NULL UNIQUE,
+    `Long` VARCHAR(4096) NOT NULL UNIQUE,
+    CONSTRAINT `shorturl_iduser_fk` FOREIGN KEY (`IDUser`) REFERENCES `User` (`IDUser`)
 );
