@@ -6,6 +6,8 @@
   <ItemGroup>
     <Compile Include="Utils.fs" />
     <Compile Include="Common.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Queries.fs" />
     <Compile Include="Authentication/Types.fs" />
     <Compile Include="Authentication/UserStore.fs" />
     <Compile Include="Authentication/RoleStore.fs" />
