@@ -174,7 +174,7 @@ type Queries(connectionString) =
                 UPDATE user
                 SET UserName = @UserName,
                     PasswordHash = @PasswordHash
-                WHERE IDUser = @User
+                WHERE IDUser = @IDUser
                 """,
                 user
             )
