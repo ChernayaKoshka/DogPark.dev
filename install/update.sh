@@ -12,7 +12,7 @@ chmod -R =o,u+rw,g+r /srv/dogpark/
 find /srv/dogpark/ -type d -exec chmod gu+x {} +
 
 # Log perms for dogpark
-chmod -R g+rw /srv/dogpark/Logs/
+chmod -R g+rw /srv/dogpark/logs/
 
 # articles/ perms for dogpark
 mkdir -p /srv/dogpark/articles/
