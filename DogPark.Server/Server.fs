@@ -84,7 +84,7 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
         .AddIdentity<User, Role>(
             fun options ->
                 // Password settings
-                options.Password.RequiredLength <- 8
+                options.Password.RequiredLength <- 16
         )
         .AddDefaultTokenProviders()
     |> ignore
