@@ -27,8 +27,105 @@ open System.Threading.Tasks
 // Web app
 // ---------------------------------
 
+let error (msg: string) = json {| Error = msg |}
+
+let handleArticle: HttpHandler =
+    fun next ctx -> task {
+        match ctx.GetQueryStringValue "id" with
+        | Ok id ->
+            match Int32.TryParse(id) with
+            | (true, id) ->
+                let queries = ctx.GetService<Queries>()
+                let! article = queries.GetArticleById id
+                return! json article next ctx
+            | (false, _) ->
+                return! RequestErrors.badRequest (error "Parameter 'id' must be an integer.") next ctx
+        | Error err ->
+            return! RequestErrors.badRequest (error err) next ctx
+    }
+
+let seed: HttpHandler =
+    fun next ctx -> task {
+        let userManager = ctx.GetService<UserManager<User>>()
+
+        let! user = userManager.FindByNameAsync "admin"
+        let! user =
+            if isNull user then
+                task {
+                    let user = User(UserName = "admin")
+                    let! result = userManager.CreateAsync(user, "b*^tDAqOhkwaZ5kLHlHl$2e9b%WtX%5a4GuUrN1VuPq$xR0VDnzsej#^6UWAz!qI#B@wJ8G0QE$D7%@EgDhV&qanc8LL@oYQz5W")
+                    if result.Succeeded then return Ok user
+                    else return Error result
+                }
+            else
+                Task.FromResult (Ok user)
+
+        match user with
+        | Ok user ->
+            return! text "seeded" next ctx
+        | Error err ->
+            return! ServerErrors.internalError (json err) next ctx
+    }
+
+let mustBeLocal: HttpHandler =
+    fun next ctx -> task {
+        if ctx.Connection.RemoteIpAddress = ctx.Connection.LocalIpAddress then
+            return! next ctx
+        else
+            return! RequestErrors.UNAUTHORIZED null "DogPark" String.Empty earlyReturn ctx
+    }
+
+let isSignedIn (ctx: HttpContext) =
+    (isNull >> not) ctx.User && ctx.User.Identity.IsAuthenticated
+
+let loginHandler: HttpHandler =
+    fun next ctx -> task {
+        if isSignedIn ctx then
+            return! setStatusCode StatusCodes.Status200OK next ctx
+        else
+            let! model = ctx.BindJsonAsync<LoginModel>()
+            let signInManager = ctx.GetService<SignInManager<User>>()
+            let! result = signInManager.PasswordSignInAsync(model.Username, model.Password, true, false)
+            if result.Succeeded then
+                return! setStatusCode StatusCodes.Status200OK next ctx
+            else
+                return! (setStatusCode StatusCodes.Status401Unauthorized >=> json result) next ctx
+    }
+
+let logoutHandler: HttpHandler =
+    fun next ctx -> task {
+        let signInManager = ctx.GetService<SignInManager<User>>()
+        do! signInManager.SignOutAsync()
+        return! setStatusCode StatusCodes.Status200OK next ctx
+    }
+
+let mustBeLoggedIn: HttpHandler =
+    error "You must be logged in."
+    |> RequestErrors.unauthorized "Identity" "DogPark"
+
 let webApp =
     choose [
+        subRoute "/api"(
+            choose [
+                subRoute "/v1" (
+                    choose [
+                        GET >=> choose [
+                            route "/article" >=> handleArticle
+                            route "/ip" >=> fun next ctx -> text (string ctx.Connection.RemoteIpAddress) next ctx
+                            routeCi "/Am/I/local" >=> mustBeLocal >=> text "you're local"
+                            routeCi "/Am/I/loggedin" >=> requiresAuthentication (text "no") >=> text "yes"
+                        ]
+                        POST >=> choose [
+                            route "/seed" >=> mustBeLocal >=> seed
+                            route "/login" >=> loginHandler
+                            route "/logout" >=> logoutHandler
+                        ]
+                    ]
+                )
+                RequestErrors.notFound (error "No such API")
+            ]
+        )
+        GET >=> htmlFile "./wwwroot/index.html"
         setStatusCode 404 >=> text "Not Found"
     ]
 
