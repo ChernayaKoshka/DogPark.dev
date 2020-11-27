@@ -61,6 +61,16 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
         .AddSingleton<Queries>(
             fun _ -> Queries(config.["MariaDB"])
         )
+        .AddTransient<IUserStore<User>, MariaDBStore>(
+            fun sp ->
+                let queries = sp.GetRequiredService<Queries>()
+                new MariaDBStore(queries)
+        )
+        .AddTransient<IRoleStore<Role>, MariaDBRoleStore>(
+            fun sp ->
+                let queries = sp.GetRequiredService<Queries>()
+                new MariaDBRoleStore(queries)
+        )
         .ConfigureApplicationCookie(
             fun options ->
                 options.ExpireTimeSpan <- TimeSpan.FromDays 150.0
