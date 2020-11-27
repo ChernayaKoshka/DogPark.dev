@@ -19,6 +19,9 @@ open Serilog
 open Serilog.AspNetCore
 open Serilog.Events
 open Microsoft.Extensions.FileProviders
+open FSharp.Control.Tasks.V2.ContextInsensitive
+open System.Runtime.InteropServices
+open System.Threading.Tasks
 
 // ---------------------------------
 // Web app
