@@ -54,6 +54,10 @@ let configureApp (app : IApplicationBuilder) =
 
 let configureServices (config: IConfigurationRoot) (services : IServiceCollection) =
     services
+        .Configure<ForwardedHeadersOptions>(
+            fun (options: ForwardedHeadersOptions) ->
+                options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto
+        )
         .AddSingleton<Queries>(
             fun _ -> Queries(config.["MariaDB"])
         )
