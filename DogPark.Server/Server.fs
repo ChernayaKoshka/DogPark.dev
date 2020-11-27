@@ -2,6 +2,7 @@ module DogPark.App
 
 open DogPark.Authentication
 open Giraffe
+open Giraffe.Serialization.Json
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
@@ -24,12 +25,15 @@ open Microsoft.Extensions.FileProviders
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open System.Runtime.InteropServices
 open System.Threading.Tasks
+open System.Text.Json
 
 // ---------------------------------
 // Web app
 // ---------------------------------
 
 let error (msg: string) = json {| Error = msg |}
+let jmessage (msg: string) = json {| Message = msg |}
+let jnotauthorized o = RequestErrors.unauthorized "Identity" "DogPark" (json o)
 
 let handleArticle: HttpHandler =
     fun next ctx -> task {
@@ -55,7 +59,7 @@ let seed: HttpHandler =
             if isNull user then
                 task {
                     let user = User(UserName = "admin")
-                    let! result = userManager.CreateAsync(user, "b*^tDAqOhkwaZ5kLHlHl$2e9b%WtX%5a4GuUrN1VuPq$xR0VDnzsej#^6UWAz!qI#B@wJ8G0QE$D7%@EgDhV&qanc8LL@oYQz5W")
+                    let! result = userManager.CreateAsync(user, "Change_me_asap20!")
                     if result.Succeeded then return Ok user
                     else return Error result
                 }
@@ -74,7 +78,7 @@ let mustBeLocal: HttpHandler =
         if ctx.Connection.RemoteIpAddress = ctx.Connection.LocalIpAddress then
             return! next ctx
         else
-            return! RequestErrors.UNAUTHORIZED null "DogPark" String.Empty earlyReturn ctx
+            return! RequestErrors.unauthorized null "DogPark" (error "You're not local.") earlyReturn ctx
     }
 
 let isSignedIn (ctx: HttpContext) =
@@ -83,15 +87,15 @@ let isSignedIn (ctx: HttpContext) =
 let loginHandler: HttpHandler =
     fun next ctx -> task {
         if isSignedIn ctx then
-            return! setStatusCode StatusCodes.Status200OK next ctx
+            return! jmessage "success" next ctx
         else
             let! model = ctx.BindJsonAsync<LoginModel>()
             let signInManager = ctx.GetService<SignInManager<User>>()
             let! result = signInManager.PasswordSignInAsync(model.Username, model.Password, true, false)
             if result.Succeeded then
-                return! setStatusCode StatusCodes.Status200OK next ctx
+                return! jmessage "success" next ctx
             else
-                return! (setStatusCode StatusCodes.Status401Unauthorized >=> json result) next ctx
+                return! jnotauthorized result next ctx
     }
 
 let logoutHandler: HttpHandler =
@@ -99,6 +103,25 @@ let logoutHandler: HttpHandler =
         let signInManager = ctx.GetService<SignInManager<User>>()
         do! signInManager.SignOutAsync()
         return! setStatusCode StatusCodes.Status200OK next ctx
+    }
+
+let changePassword: HttpHandler =
+    fun next ctx -> task {
+        if isSignedIn ctx then
+            let! model = ctx.BindJsonAsync<ChangePasswordModel>()
+            let userManager = ctx.GetService<UserManager<User>>()
+            let! user = userManager.FindByNameAsync(ctx.User.Identity.Name)
+
+            if isNull user then
+                return! ServerErrors.internalError (error $"Could not locate user {ctx.User.Identity.Name}") next ctx
+            else
+                let! result = userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword)
+                if result.Succeeded then
+                    return! setStatusCode StatusCodes.Status200OK next ctx
+                else
+                    return! jnotauthorized result next ctx
+        else
+            return! RequestErrors.unauthorized null "DogPark" (error "You're not authorized.") earlyReturn ctx
     }
 
 let mustBeLoggedIn: HttpHandler =
@@ -112,15 +135,21 @@ let webApp =
                 subRoute "/v1" (
                     choose [
                         GET >=> choose [
+                            route "/ping" >=> text "pong"
                             route "/article" >=> handleArticle
                             route "/ip" >=> fun next ctx -> text (string ctx.Connection.RemoteIpAddress) next ctx
-                            routeCi "/Am/I/local" >=> mustBeLocal >=> text "you're local"
-                            routeCi "/Am/I/loggedin" >=> requiresAuthentication (text "no") >=> text "yes"
+                            route "/am/i/local" >=> mustBeLocal >=> text "you're local"
+                            route "/am/i/loggedin" >=> requiresAuthentication (text "no") >=> text "yes"
                         ]
                         POST >=> choose [
                             route "/seed" >=> mustBeLocal >=> seed
-                            route "/login" >=> loginHandler
-                            route "/logout" >=> logoutHandler
+                            subRoute "/account" (
+                                choose [
+                                    route "/login" >=> loginHandler
+                                    route "/logout" >=> logoutHandler
+                                    route "/changepassword" >=> requiresAuthentication mustBeLoggedIn >=> changePassword
+                                ]
+                            )
                         ]
                     ]
                 )
@@ -190,6 +219,7 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
         .Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) ->
             options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto)
         .AddGiraffe()
+        .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(JsonSerializerOptions()))
         .AddIdentity<User, Role>(
             fun options ->
                 // Password settings

@@ -14,6 +14,13 @@ type Role() =
     member val Name = "ERROR" with get, set
     member val NormalizedName = "ERROR" with get, set
 
+
+type ChangePasswordModel =
+    {
+        OldPassword: string
+        NewPassword: string
+    }
+
 type LoginModel =
     {
         Username: string
