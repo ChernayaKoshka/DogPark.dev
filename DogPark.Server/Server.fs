@@ -47,7 +47,7 @@ let configureApp (app : IApplicationBuilder) =
     let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
     (match env.IsDevelopment() with
     | true  -> app.UseDeveloperExceptionPage()
-    | false -> app.UseGiraffeErrorHandler (fun e l -> e |> string |> text))
+    | false -> app.UseGiraffeErrorHandler (fun e l -> ServerErrors.internalError (text "Something went wrong") ))
         .UseCors(configureCors)
         .UseStaticFiles()
         .UseStaticFiles(getBlazorFrameworkStaticFileOptions (new PhysicalFileProvider(blazorFramework)) "/_framework")
