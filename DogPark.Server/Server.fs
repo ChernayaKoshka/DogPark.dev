@@ -111,7 +111,16 @@ let main args =
     let config =
         try
             ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", false)
+                .AddJsonFile((
+                                #if DEBUG
+                                "appsettings.test.json"
+                                #else
+                                if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
+                                    "appsettings.json"
+                                else
+                                    "appsettings.windows.json"
+                                #endif
+                ), false)
                 .AddCommandLine(args)
                 .Build()
         with
