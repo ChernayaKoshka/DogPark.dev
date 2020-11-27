@@ -8,16 +8,14 @@
     <Compile Include="Common.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Queries.fs" />
-    <Compile Include="Authentication/Types.fs" />
     <Compile Include="Authentication/UserStore.fs" />
     <Compile Include="Authentication/RoleStore.fs" />
-    <Compile Include="Types.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.30" />
-    <PackageReference Include="Giraffe" Version="4.0.1" />
+    <PackageReference Include="Giraffe" Version="4.1.0" />
     <PackageReference Include="markdig" Version="0.18.0" />
     <PackageReference Include="MySqlConnector" Version="0.61.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
