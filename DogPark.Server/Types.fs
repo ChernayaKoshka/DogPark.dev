@@ -37,12 +37,17 @@ type ArticleDto =
         FilePath: string
     }
 
-type Article =
+type ArticleDetails =
     {
         Author: string
         Created: DateTime
         Modified: DateTime
         Headline: string
+    }
+
+type Article =
+    {
+        Details: ArticleDetails
         Body: string
         HtmlBody: string
     }

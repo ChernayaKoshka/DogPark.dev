@@ -45,6 +45,13 @@ let handleArticle (idArticle: uint32): HttpHandler =
             return! RequestErrors.badRequest (error err) next ctx
     }
 
+let getAllArticles: HttpHandler =
+    fun next ctx -> task {
+        let queries = ctx.GetService<Queries>()
+        let! details = queries.GetAllArticleDetails()
+        return! json details next ctx
+    }
+
 let seed: HttpHandler =
     fun next ctx -> task {
         let userManager = ctx.GetService<UserManager<User>>()
@@ -132,6 +139,9 @@ let webApp =
                         GET >=> choose [
                             route "/ping" >=> text "pong"
 
+                            route "/article"
+                                >=> publicResponseCaching (int (TimeSpan.FromSeconds(30.).TotalSeconds)) None
+                                >=> getAllArticles
                             // fsharplint:disable-next-line
                             routef "/article/%d" (fun (id: int64) ->
                                 publicResponseCaching (int (TimeSpan.FromDays(1.).TotalSeconds)) None

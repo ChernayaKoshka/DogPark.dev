@@ -16,6 +16,17 @@ type Queries(connectionString) =
         return connection
     }
 
+    member __.GetAllArticleDetails() = task {
+        use! connection = makeOpenConnection()
+        return!
+            connection.QueryAsync<ArticleDetails>(
+                """
+                SELECT u.UserName Author, a.Created, a.Modified, a.Headline FROM article a
+                JOIN User u ON u.IDUser = a.IDUser
+                """
+            )
+    }
+
     member __.GetArticleById (idArticle: uint32) = task {
         use! connection = makeOpenConnection()
         let! articleDto =
@@ -35,10 +46,13 @@ type Queries(connectionString) =
             let! body = System.IO.File.ReadAllTextAsync(path)
             return
                 {
-                    Author = articleDto.UserName
-                    Created = articleDto.Created
-                    Modified = articleDto.Modified
-                    Headline = articleDto.Headline
+                    Details =
+                        {
+                            Author = articleDto.UserName
+                            Created = articleDto.Created
+                            Modified = articleDto.Modified
+                            Headline = articleDto.Headline
+                        }
                     Body = body
                     HtmlBody = Markdig.Markdown.ToHtml(body, markdownPipeline)
                 } |> Ok
