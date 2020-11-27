@@ -16,15 +16,34 @@ type Queries(connectionString) =
         return connection
     }
 
-    member __.GetArticleById (idArticle: int) = task {
+    member __.GetArticleById (idArticle: uint32) = task {
         use! connection = makeOpenConnection()
-        return! connection.QuerySingleAsync<Article>(
-            """
-            SELECT * FROM article
-            WHERE IDArticle = @IDArticle
-            """,
-            {| IDArticle = idArticle |}
-        )
+        let! articleDto =
+            connection.QuerySingleOrDefaultAsync<ArticleDto>(
+                """
+                SELECT u.UserName, a.Created, a.Modified, a.Headline, a.FilePath FROM article a
+                JOIN User u ON u.IDUser = a.IDUser
+                WHERE IDArticle = @IDArticle
+                """,
+                {| IDArticle = idArticle |}
+            )
+        if isNull (box articleDto) then
+            return Error "Article was not found."
+        else
+        let path = System.IO.Path.Combine(articleRoot, articleDto.FilePath)
+        if System.IO.File.Exists path then
+            let! body = System.IO.File.ReadAllTextAsync(path)
+            return
+                {
+                    Author = articleDto.UserName
+                    Created = articleDto.Created
+                    Modified = articleDto.Modified
+                    Headline = articleDto.Headline
+                    Body = body
+                    HtmlBody = Markdig.Markdown.ToHtml(body, markdownPipeline)
+                } |> Ok
+        else
+            return Error "Could not find article on disk."
     }
 
     // BEGIN ROLESTORE
