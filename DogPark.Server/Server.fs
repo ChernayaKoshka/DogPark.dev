@@ -35,17 +35,12 @@ let error (msg: string) = json {| Error = msg |}
 let jmessage (msg: string) = json {| Message = msg |}
 let jnotauthorized o = RequestErrors.unauthorized "Identity" "DogPark" (json o)
 
-let handleArticle: HttpHandler =
+let handleArticle (idArticle: uint32): HttpHandler =
     fun next ctx -> task {
-        match ctx.GetQueryStringValue "id" with
-        | Ok id ->
-            match Int32.TryParse(id) with
-            | (true, id) ->
-                let queries = ctx.GetService<Queries>()
-                let! article = queries.GetArticleById id
-                return! json article next ctx
-            | (false, _) ->
-                return! RequestErrors.badRequest (error "Parameter 'id' must be an integer.") next ctx
+        let queries = ctx.GetService<Queries>()
+        match! queries.GetArticleById idArticle with
+        | Ok article ->
+            return! json article next ctx
         | Error err ->
             return! RequestErrors.badRequest (error err) next ctx
     }
@@ -136,7 +131,10 @@ let webApp =
                     choose [
                         GET >=> choose [
                             route "/ping" >=> text "pong"
-                            route "/article" >=> handleArticle
+
+                            // fsharplint:disable-next-line
+                            routef "/article/%d" (fun (id: int64) -> id |> uint32 |> handleArticle)
+
                             route "/ip" >=> fun next ctx -> text (string ctx.Connection.RemoteIpAddress) next ctx
                             route "/am/i/local" >=> mustBeLocal >=> text "you're local"
                             route "/am/i/loggedin" >=> requiresAuthentication (text "no") >=> text "yes"
