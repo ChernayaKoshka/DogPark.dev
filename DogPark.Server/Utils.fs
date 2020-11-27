@@ -20,6 +20,7 @@ let getBlazorFrameworkStaticFileOptions (fileProvider: IFileProvider) requestPat
             contentTypeProvider.Mappings.Add(extension, contentType)
 
     addMapping ".dll" MediaTypeNames.Application.Octet
+    addMapping ".blat" MediaTypeNames.Application.Octet
     addMapping ".dat" MediaTypeNames.Application.Octet
     // We unconditionally map pdbs as there will be no pdbs in the output folder for
     // release builds unless BlazorEnableDebugging is explicitly set to true.
