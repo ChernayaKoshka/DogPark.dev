@@ -52,10 +52,11 @@ let configureApp (app : IApplicationBuilder) =
         .UseAuthentication()
         .UseGiraffe(webApp)
 
-let configureServices (services : IServiceCollection) =
+let configureServices (config: IConfigurationRoot) (services : IServiceCollection) =
     services
-        .AddTransient<IUserStore<User>, MariaDBStore>()
-        .AddTransient<IRoleStore<Role>, MariaDBRoleStore>()
+        .AddSingleton<Queries>(
+            fun _ -> Queries(config.["MariaDB"])
+        )
         .ConfigureApplicationCookie(
             fun options ->
                 options.ExpireTimeSpan <- TimeSpan.FromDays 150.0
@@ -121,7 +122,7 @@ let main args =
                         .UseWebRoot(webRoot)
                         .UseConfiguration(config)
                         .Configure(configureApp)
-                        .ConfigureServices(configureServices)
+                        .ConfigureServices(configureServices config)
                         .UseSerilog()
                         .UseKestrel()
                     |> ignore
