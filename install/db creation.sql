@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS `userrole` (
 CREATE TABLE IF NOT EXISTS `article` (
     `IDArticle` int unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `IDUser` INT NOT NULL,
+    `Created` DATETIME NOT NULL DEFAULT NOW(),
+    `Modified` DATETIME NOT NULL DEFAULT NOW(),
     `Headline` VARCHAR(255) NOT NULL,
     `FilePath` VARCHAR(4096) NOT NULL,
     CONSTRAINT `article_iduser_fk` FOREIGN KEY (`IDUser`) REFERENCES `User` (`IDUser`)
