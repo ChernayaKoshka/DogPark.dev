@@ -15,7 +15,7 @@ find /srv/dogpark/ -type d -exec chmod gu+x {} +
 chmod -R g+rw /srv/dogpark/logs/
 
 # articles/ perms for dogpark
-mkdir -p /srv/dogpark/articles/
-chmod -R g+rw /srv/dogpark/articles/
+mkdir -p /srv/dogpark/wwwroot/articles/
+chmod -R g+rw /srv/dogpark/wwwroot/articles/
 
 rc-service dogpark start
