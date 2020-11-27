@@ -133,7 +133,10 @@ let webApp =
                             route "/ping" >=> text "pong"
 
                             // fsharplint:disable-next-line
-                            routef "/article/%d" (fun (id: int64) -> id |> uint32 |> handleArticle)
+                            routef "/article/%d" (fun (id: int64) ->
+                                publicResponseCaching (int (TimeSpan.FromDays(1.).TotalSeconds)) None
+                                >=> handleArticle (uint32 id)
+                            )
 
                             route "/ip" >=> fun next ctx -> text (string ctx.Connection.RemoteIpAddress) next ctx
                             route "/am/i/local" >=> mustBeLocal >=> text "you're local"
@@ -182,10 +185,12 @@ let configureApp (app : IApplicationBuilder) =
         )
     )
         .UseCors(configureCors)
+        .UseResponseCaching()
         .UseStaticFiles()
         .UseStaticFiles(getBlazorFrameworkStaticFileOptions (new PhysicalFileProvider(blazorFramework)) "/_framework")
         .UseForwardedHeaders()
         .UseAuthentication()
+
         .UseGiraffe(webApp)
 
 let configureServices (config: IConfigurationRoot) (services : IServiceCollection) =
