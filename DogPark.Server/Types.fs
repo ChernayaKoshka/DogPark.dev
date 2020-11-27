@@ -1,5 +1,6 @@
 [<AutoOpen>]
 module DogPark.Types
+open System
 
 [<AllowNullLiteral>]
 type User() =
@@ -27,12 +28,23 @@ type LoginModel =
         Password: string
     }
 
-type Article =
+type ArticleDto =
     {
-        IDArticle: uint32
-        IDUser: int
+        UserName: string
+        Created: DateTime
+        Modified: DateTime
         Headline: string
         FilePath: string
+    }
+
+type Article =
+    {
+        Author: string
+        Created: DateTime
+        Modified: DateTime
+        Headline: string
+        Body: string
+        HtmlBody: string
     }
 
 type ShortUrl =
