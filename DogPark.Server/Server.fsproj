@@ -19,6 +19,7 @@
     <PackageReference Include="markdig" Version="0.18.0" />
     <PackageReference Include="MySqlConnector" Version="0.61.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
+    <PackageReference Include="Serilog.Sinks.MariaDB" Version="1.0.0" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
   </ItemGroup>
 </Project>

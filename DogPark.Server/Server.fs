@@ -16,6 +16,8 @@ open Microsoft.Extensions.Logging
 open System
 open System.IO
 open Serilog
+open Serilog.Sinks.MariaDB
+open Serilog.Sinks.MariaDB.Extensions
 open Serilog.AspNetCore
 open Serilog.Events
 open Microsoft.Extensions.FileProviders
@@ -189,7 +191,7 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
         .AddDefaultTokenProviders()
     |> ignore
 
-let configureLogging() =
+let configureLogging (config: IConfigurationRoot) =
     Log.Logger <-
         LoggerConfiguration()
             .MinimumLevel.Verbose()
@@ -197,6 +199,12 @@ let configureLogging() =
             .Enrich.FromLogContext()
             .WriteTo.Console(restrictedToMinimumLevel = LogEventLevel.Debug, theme = Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code)
             .WriteTo.File(System.IO.Path.Combine(logRoot, "server.log"), restrictedToMinimumLevel = LogEventLevel.Verbose, rollingInterval = RollingInterval.Day)
+            .WriteTo.MariaDB(
+                connectionString = config.["MariaDB"],
+                tableName = "logs",
+                autoCreateTable = true,
+                useBulkInsert = false
+            )
             .CreateLogger()
 
 type EExitCode =
@@ -206,8 +214,6 @@ type EExitCode =
 
 [<EntryPoint>]
 let main args =
-    configureLogging()
-
     let config =
         try
             ConfigurationBuilder()
@@ -225,12 +231,12 @@ let main args =
                 .Build()
         with
         | e ->
-            Log.Fatal(e, "ConfigurationException: ")
-            Log.CloseAndFlush()
             exit -2
 
     if config.GetValue<bool> "validateconfig" then
         exit 0
+
+    configureLogging config
 
     for var in config.AsEnumerable() do
         Log.Debug(sprintf "%A" var)
