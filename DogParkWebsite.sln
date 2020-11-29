@@ -7,6 +7,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DogPark.Server", "DogPark.S
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DogPark.Client", "DogPark.Client\Client.fsproj", "{2AD33D3D-3650-406E-BE2A-E7BD9D0FD59A}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DogPark.Shared", "DogPark.Shared\DogPark.Shared.fsproj", "{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,5 +58,17 @@ Global
 		{AB6655D4-492D-4E74-B2E1-797F11A43563}.Release|x64.Build.0 = Release|Any CPU
 		{AB6655D4-492D-4E74-B2E1-797F11A43563}.Release|x86.ActiveCfg = Release|Any CPU
 		{AB6655D4-492D-4E74-B2E1-797F11A43563}.Release|x86.Build.0 = Release|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Debug|x64.Build.0 = Debug|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Debug|x86.Build.0 = Debug|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Release|x64.ActiveCfg = Release|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Release|x64.Build.0 = Release|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Release|x86.ActiveCfg = Release|Any CPU
+		{60640292-B1B9-4F6C-8E7C-C6E5274FA9B9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
