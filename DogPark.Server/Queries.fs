@@ -1,5 +1,6 @@
 namespace DogPark
 
+open DogPark.Shared
 open Dapper
 open System.Collections.Generic
 open System.Linq
