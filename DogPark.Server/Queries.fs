@@ -22,7 +22,7 @@ type Queries(connectionString) =
         return!
             connection.QueryAsync<ArticleDetails>(
                 """
-                SELECT u.UserName Author, a.Created, a.Modified, a.Headline FROM article a
+                SELECT a.IDArticle Id, u.UserName Author, a.Created, a.Modified, a.Headline FROM article a
                 JOIN User u ON u.IDUser = a.IDUser
                 """
             )
@@ -33,7 +33,7 @@ type Queries(connectionString) =
         let! articleDto =
             connection.QuerySingleOrDefaultAsync<ArticleDto>(
                 """
-                SELECT u.UserName, a.Created, a.Modified, a.Headline, a.FilePath FROM article a
+                SELECT a.IDArticle, u.UserName, a.Created, a.Modified, a.Headline, a.FilePath FROM article a
                 JOIN User u ON u.IDUser = a.IDUser
                 WHERE IDArticle = @IDArticle
                 """,
@@ -49,6 +49,7 @@ type Queries(connectionString) =
                 {
                     Details =
                         {
+                            Id = articleDto.IDArticle
                             Author = articleDto.UserName
                             Created = articleDto.Created
                             Modified = articleDto.Modified

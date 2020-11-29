@@ -18,6 +18,7 @@ type LoginModel =
 
 type ArticleDetails =
     {
+        Id: uint32
         Author: string
         Created: DateTime
         Modified: DateTime

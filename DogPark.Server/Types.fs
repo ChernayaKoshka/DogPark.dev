@@ -17,6 +17,7 @@ type Role() =
 
 type ArticleDto =
     {
+        IDArticle: uint32
         UserName: string
         Created: DateTime
         Modified: DateTime
