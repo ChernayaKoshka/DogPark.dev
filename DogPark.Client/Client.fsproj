@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -11,6 +11,9 @@
     <PackageReference Include="Bolero" Version="0.*" />
     <PackageReference Include="Bolero.Build" Version="0.*" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.*" />
+    <PackageReference Include="FsEasyHttp" Version="2.*" />
+    <PackageReference Include="Ply" Version="0.*" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DogPark.Shared\DogPark.Shared.fsproj" />
   </ItemGroup>
