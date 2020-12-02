@@ -288,6 +288,7 @@ let main args =
                 .Build()
         with
         | e ->
+            printfn "%A" e
             exit -2
 
     if config.GetValue<bool> "validateconfig" then
