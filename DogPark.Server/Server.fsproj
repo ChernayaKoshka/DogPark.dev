@@ -21,6 +21,7 @@
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
     <PackageReference Include="Serilog.Sinks.MariaDB" Version="1.0.0" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.*" />
   </ItemGroup>
 
   <ItemGroup>
