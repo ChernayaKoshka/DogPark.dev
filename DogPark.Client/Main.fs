@@ -55,7 +55,7 @@ let initModel (clientFactory: IHttpClientFactory) =
     let client = clientFactory.CreateClient(BaseAddress = Api.BaseUri)
 
     let api =
-        match makeApi<Api> client with
+        match makeApi<Api> Api.BaseUri client with
         | Ok api -> api
         | Error err -> failwith err
     {
