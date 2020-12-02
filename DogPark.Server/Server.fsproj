@@ -25,5 +25,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DogPark.Shared\DogPark.Shared.fsproj" />
+    <ProjectReference Include="..\DogPark.Client\Client.fsproj" />
   </ItemGroup>
 </Project>

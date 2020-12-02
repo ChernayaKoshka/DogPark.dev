@@ -168,7 +168,12 @@ let webApp =
                 RequestErrors.notFound (error "No such API")
             ]
         )
-        GET >=> htmlFile "./wwwroot/index.html"
+        GET >=>
+            #if DEBUG
+            htmlFile (Path.Combine(__SOURCE_DIRECTORY__, "../DogPark.Client/wwwroot/index.html"))
+            #else
+            htmlFile "wwwroot/index.html"
+            #endif
         setStatusCode 404 >=> text "Not Found"
     ]
 
@@ -198,7 +203,8 @@ let configureApp (app : IApplicationBuilder) =
         .UseCors(configureCors)
         .UseResponseCaching()
         .UseStaticFiles()
-        .UseStaticFiles(getBlazorFrameworkStaticFileOptions (new PhysicalFileProvider(blazorFramework)) "/_framework")
+        .UseBlazorFrameworkFiles()
+        // .UseStaticFiles(getBlazorFrameworkStaticFileOptions (new PhysicalFileProvider(Path.Combine(env.WebRootPath, "/_framework" ))) "/_framework")
         .UseForwardedHeaders()
         .UseAuthentication()
 
@@ -296,10 +302,10 @@ let main args =
         try
             Host
                 .CreateDefaultBuilder()
-                .UseContentRoot(contentRoot)
                 .ConfigureWebHostDefaults(fun webHostBuilder ->
                     webHostBuilder
-                        .UseWebRoot(webRoot)
+                        .UseStaticWebAssets()
+                        // .UseWebRoot(webRoot)
                         .UseConfiguration(config)
                         .Configure(configureApp)
                         .ConfigureServices(configureServices config)
