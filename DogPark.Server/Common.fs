@@ -4,7 +4,6 @@ module DogPark.Common
 open System.IO
 open System
 open Markdig
-open System.Text.RegularExpressions
 
 let contentRoot     = AppContext.BaseDirectory
 let logRoot         = Path.Combine(contentRoot, "logs")
