@@ -19,9 +19,10 @@ Target.create "Clean" (fun _ ->
 )
 
 Target.create "Build" (fun _ ->
+    let configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
     // needs to use var or somethin' to check build mode
     !! "**/*.*proj"
-    |> Seq.iter (DotNet.build (fun parms -> { parms with Configuration = DotNet.BuildConfiguration.Debug }))
+    |> Seq.iter (DotNet.build (fun parms -> { parms with Configuration = configuration }))
 
     // https://medium.com/@stef.heyenrath/show-a-loading-progress-indicator-for-a-blazor-webassembly-application-ea28595ff8c1
     !! "**/blazor.webassembly.js"
@@ -34,7 +35,8 @@ Target.create "Build" (fun _ ->
 
 Target.create "Run" (fun _ ->
   // I need to find a better way
-  let server = !! "**/Server.exe" |> Seq.head
+  let configuration = Environment.environVarOrDefault "Configuration" "Debug"
+  let server = !! (sprintf "**/%s/**/Server.exe" configuration) |> Seq.head
   Shell.Exec(server, dir = "DogPark.Server")
   |> ignore
 )
