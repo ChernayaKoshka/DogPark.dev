@@ -21,6 +21,10 @@ type Api =
         [<Method("GET")>]
         [<Path("article")>]
         Articles: unit -> Task<ArticleDetails seq>
+
+        [<Method("GET")>]
+        [<Path("article/{Id}")>]
+        Article: {| Id: uint32 |} -> Task<Article>
     }
     with
         static member BaseUri = Uri("http://localhost:7777/api/v1/")
@@ -29,7 +33,6 @@ type Page =
     | Home
     | Article of id: uint32
     | Articles
-    | ArticlesNoWrapper
 
 type Model =
     {
@@ -39,14 +42,16 @@ type Model =
         PingResult: string
 
         ArticlesList: ArticleDetails seq
+        Article: Article option
     }
 type Message =
     | SetPage of Page
     | Ping
     | SetPingText of string
     | GetArticlesList
-    | GetArticlesListNoWrapper
     | GotArticlesList of ArticleDetails seq
+    | GetArticle of id: uint32
+    | GotArticle of Article
     | DoNothing
 
 let router = Router.infer SetPage (fun m -> m.Page)
@@ -64,6 +69,7 @@ let initModel (clientFactory: IHttpClientFactory) =
         ClientFactory = clientFactory
         PingResult = "Press the Ping! button"
         ArticlesList = Seq.empty
+        Article = None
     }, Cmd.none
 
 let update message model =
@@ -73,8 +79,8 @@ let update message model =
             match page with
             | Articles ->
                 Cmd.ofMsg GetArticlesList
-            | ArticlesNoWrapper ->
-                Cmd.ofMsg GetArticlesListNoWrapper
+            | Article id ->
+                Cmd.ofMsg (GetArticle id)
             | _ ->
                 Cmd.none
         { model with
@@ -86,18 +92,27 @@ let update message model =
         }, Cmd.none
     | Ping ->
         model, Cmd.OfTask.perform model.Api.Ping () SetPingText
-    | GetArticlesListNoWrapper ->
-        model, Cmd.OfTask.either model.Api.Articles () GotArticlesList (fun err -> printfn "%A" err; DoNothing)
     | GetArticlesList ->
         model,
         Cmd.OfTask.either
-            (fun () -> task { return! model.Api.Articles() })
+            model.Api.Articles
             ()
-            (fun l -> printfn "got %A" l; GotArticlesList l)
+            GotArticlesList
             (fun err -> printfn "%A" err; DoNothing)
     | GotArticlesList articles ->
         { model with
             ArticlesList = articles
+        }, Cmd.none
+    | GetArticle id ->
+        model,
+        Cmd.OfTask.either
+            model.Api.Article
+            {| Id = id |}
+            GotArticle
+            (fun err -> printfn "%A" err; DoNothing)
+    | GotArticle article ->
+        { model with
+            Article = Some article
         }, Cmd.none
     | DoNothing -> model, Cmd.none
 
@@ -115,6 +130,20 @@ let articlesView model dispatch =
         ]
     ]
 
+type Article = Template<"./wwwroot/article.html">
+let articleView model dispatch =
+    div [ ] [
+        cond model.Article <| function
+        | Some article ->
+            Article()
+                .Title(article.Details.Headline)
+                .Subtitle($"Author: {article.Details.Author} @ {article.Details.Created}")
+                .Content(RawHtml article.HtmlBody)
+                .Elt()
+        | None ->
+            text "Loading..."
+    ]
+
 let homeView model dispatch =
     div [ ] [
         p [ ] [ text "Hello, world!" ]
@@ -123,22 +152,11 @@ let homeView model dispatch =
     ]
 
 let view model dispatch =
-    div [ ] [
-        p [ ] [ model.Page |> string |> text ]
-        hr [ ]
-
+    div [ attr.``class`` "container" ] [
         cond model.Page <| function
         | Home -> homeView model dispatch
-        | Article id -> homeView model dispatch
+        | Article id -> articleView model dispatch
         | Articles -> articlesView model dispatch
-        | ArticlesNoWrapper -> articlesView model dispatch
-
-        p [ ] [
-            a [ router.HRef Home ] [ text "Home" ]
-            a [ router.HRef (Article 1u) ] [ text "Article 1" ]
-            a [ router.HRef Articles ] [ text "Articles" ]
-            a [ router.HRef ArticlesNoWrapper ] [ text "ArticlesNoWrapper" ]
-        ]
     ]
 
 type MyApp() =
