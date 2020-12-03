@@ -27,7 +27,11 @@ type Api =
         Article: {| Id: uint32 |} -> Task<Article>
     }
     with
+        #if DEBUG
         static member BaseUri = Uri("http://localhost:7777/api/v1/")
+        #else
+        static member BaseUri = Uri("https://dogpark.dev/api/v1/")
+        #endif
 
 type Page =
     | Home
