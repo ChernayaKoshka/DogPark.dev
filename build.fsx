@@ -16,7 +16,6 @@ Target.create "Clean" (fun _ ->
     match DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug with
     | DotNet.Debug ->
       Trace.log "Skipping clean because it's a debug build"
-      ()
     | _ ->
       !! "**/bin"
       ++ "**/obj"
