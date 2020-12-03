@@ -1,5 +1,11 @@
 #!/bin/ash
 rc-service dogpark stop
+
+mkdir -p /srv/dogpark/
+mkdir -p /srv/dogpark/logs/
+mkdir -p /srv/dogpark/wwwroot/
+mkdir -p /srv/dogpark/wwwroot/articles/
+
 cp -af /mnt/media/Private/Staging/* /srv/dogpark/
 
 # Setting proper ownership
@@ -15,7 +21,6 @@ find /srv/dogpark/ -type d -exec chmod gu+x {} +
 chmod -R g+rw /srv/dogpark/logs/
 
 # articles/ perms for dogpark
-mkdir -p /srv/dogpark/wwwroot/articles/
 chmod -R g+rw /srv/dogpark/wwwroot/articles/
 
 rc-service dogpark start
