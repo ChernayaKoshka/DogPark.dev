@@ -10,7 +10,7 @@ open System.Net.Http
 open System.IO
 open System.Threading.Tasks
 open DogPark.Shared
-open FSharp.Control.Tasks
+open FSharp.Control.Tasks.V2.ContextInsensitive
 
 type Api =
     {
