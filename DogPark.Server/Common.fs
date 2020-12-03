@@ -5,7 +5,12 @@ open System.IO
 open System
 open Markdig
 
-let contentRoot     = AppContext.BaseDirectory
+let contentRoot     =
+    #if DEBUG
+    Path.Combine(__SOURCE_DIRECTORY__, "../DogPark.Client/")
+    #else
+    AppContext.BaseDirectory
+    #endif
 let logRoot         = Path.Combine(contentRoot, "logs")
 let webRoot         = Path.Combine(contentRoot, "wwwroot")
 let blazorFramework = Path.Combine(webRoot, "_framework")

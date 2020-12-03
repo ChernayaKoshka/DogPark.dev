@@ -170,7 +170,7 @@ let webApp =
         )
         GET >=>
             #if DEBUG
-            htmlFile (Path.Combine(__SOURCE_DIRECTORY__, "../DogPark.Client/wwwroot/index.html"))
+            htmlFile (Path.Combine(webRoot, "index.html"))
             #else
             htmlFile "wwwroot/index.html"
             #endif
