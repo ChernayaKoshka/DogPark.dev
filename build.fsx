@@ -18,9 +18,9 @@ Target.create "Clean" (fun _ ->
       Trace.log "Skipping clean because it's a debug build"
       ()
     | _ ->
-    !! "**/bin"
-    ++ "**/obj"
-    |> Shell.cleanDirs
+      !! "**/bin"
+      ++ "**/obj"
+      |> Shell.cleanDirs
 )
 
 Target.create "Build" (fun _ ->
@@ -39,9 +39,9 @@ Target.create "Build" (fun _ ->
 )
 
 Target.create "Run" (fun _ ->
-  // I need to find a better way
   let configuration = Environment.environVarOrDefault "Configuration" "Debug"
-  let server = !! (sprintf "**/%s/**/Server.exe" configuration) |> Seq.head
+  // I need to find a better way
+  let server = !! (sprintf "DogPark.Server/bin/%s/*/Server.exe" configuration) |> Seq.head
   Shell.Exec(server, dir = "DogPark.Server")
   |> ignore
 )
