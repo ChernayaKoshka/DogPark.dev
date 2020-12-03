@@ -172,7 +172,7 @@ let webApp =
             #if DEBUG
             htmlFile (Path.Combine(webRoot, "index.html"))
             #else
-            htmlFile "wwwroot/index.html"
+            htmlFile "./wwwroot/index.html"
             #endif
         setStatusCode 404 >=> text "Not Found"
     ]
@@ -204,7 +204,6 @@ let configureApp (app : IApplicationBuilder) =
         .UseResponseCaching()
         .UseStaticFiles()
         .UseBlazorFrameworkFiles()
-        // .UseStaticFiles(getBlazorFrameworkStaticFileOptions (new PhysicalFileProvider(Path.Combine(env.WebRootPath, "/_framework" ))) "/_framework")
         .UseForwardedHeaders()
         .UseAuthentication()
 
@@ -296,6 +295,8 @@ let main args =
 
     configureLogging config
 
+    Directory.SetCurrentDirectory(contentRoot)
+
     for var in config.AsEnumerable() do
         Log.Debug(sprintf "%A" var)
 
@@ -305,8 +306,12 @@ let main args =
                 .CreateDefaultBuilder()
                 .ConfigureWebHostDefaults(fun webHostBuilder ->
                     webHostBuilder
+                        #if DEBUG
                         .UseStaticWebAssets()
-                        // .UseWebRoot(webRoot)
+                        #else
+                        .UseContentRoot(contentRoot)
+                        .UseWebRoot(webRoot)
+                        #endif
                         .UseConfiguration(config)
                         .Configure(configureApp)
                         .ConfigureServices(configureServices config)
