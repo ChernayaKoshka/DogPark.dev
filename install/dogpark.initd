@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+
+name="Dogpark web server"
+description="Serves dogpark.dev"
+
+command="/usr/bin/dotnet"
+command_args="/srv/dogpark/Server.dll $dogpark_opts"
+command_user="dogpark:dogpark"
+
+depend() {
+    need localmount
+    use net
+    after firewall caddy
+}

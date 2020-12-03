@@ -1,29 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
+
   <ItemGroup>
-    <Content Include="../root/**/*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Compile Include="../DogPark.Shared/Shared.Types.fs" />
-    <Compile Include="../DogPark.Shared/Helpers.fs" />
+    <Compile Include="Utils.fs" />
     <Compile Include="Common.fs" />
-    <Compile Include="Authentication/Types.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Queries.fs" />
     <Compile Include="Authentication/UserStore.fs" />
     <Compile Include="Authentication/RoleStore.fs" />
-    <Compile Include="Types.fs" />
-    <Compile Include="Api.fs" />
-    <Compile Include="Views.fs" />
-    <Compile Include="Handlers.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.30" />
-    <PackageReference Include="Giraffe" Version="4.0.1" />
+    <PackageReference Include="Giraffe" Version="5.0.0-rc-2" />
     <PackageReference Include="markdig" Version="0.18.0" />
     <PackageReference Include="MySqlConnector" Version="0.61.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
+    <PackageReference Include="Serilog.Sinks.MariaDB" Version="1.0.0" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DogPark.Shared\DogPark.Shared.fsproj" />
+    <ProjectReference Include="..\DogPark.Client\Client.fsproj" />
   </ItemGroup>
 </Project>

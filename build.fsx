@@ -1,110 +1,55 @@
-open System.Text.RegularExpressions
 #r "paket:
 nuget Fake.DotNet.Cli
 nuget Fake.IO.FileSystem
-nuget Fake.JavaScript.Yarn
 nuget Fake.Core.Target //"
 #load ".fake/build.fsx/intellisense.fsx"
 open Fake.Core
 open Fake.DotNet
 open Fake.IO
-open Fake.JavaScript
 open Fake.IO.FileSystemOperators
 open Fake.IO.Globbing.Operators
 open Fake.Core.TargetOperators
-open System.IO
-open System
 
 Target.initEnvironment ()
 
-let buildOutput = "./output/"
-let webRoot = Path.Combine(buildOutput, "WebRoot")
-let javascriptOutput = Path.Combine(webRoot, "scripts")
-
-Target.create "Restore" (fun _ ->
-  !! "**/*.*proj"
-  -- "**/.fable/**"
-  -- "**/node_modules/**"
-  |> Seq.iter (DotNet.restore id)
-
-  Yarn.install (fun bo -> { bo with WorkingDirectory = "./DogPark.Client/" })
+Target.create "Clean" (fun _ ->
+    match DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug with
+    | DotNet.Debug ->
+      Trace.log "Skipping clean because it's a debug build"
+    | _ ->
+      !! "**/bin"
+      ++ "**/obj"
+      |> Shell.cleanDirs
 )
-
-let build() =
-    Trace.log "Building JS dependencies..."
-    Yarn.exec (sprintf "fable-splitter DogPark.Client --outDir %s --allFiles" javascriptOutput) id
-
-    Trace.log @"Fixing imports... >:\"
-    !! (sprintf "%s/**/*.js" javascriptOutput)
-    |> Seq.iter (fun path ->
-      path
-      |> sprintf "Fixing %s"
-      |> Trace.log
-
-      let data = File.ReadAllText(path)
-      let fixedData = Regex.Replace(data, @"(^\s*import .*? from\s*"".*?)"";", @"$1.js"";", RegexOptions.Multiline)
-      File.WriteAllText(path, fixedData)
-    )
-
-    let configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
-    Trace.logf "Building .NET projects (%O)..." configuration
-    !! "**/*.*proj"
-    -- "**/.fable/**"
-    -- "**/node_modules/**"
-    -- "**/DogPark.Client/**"
-    |> Seq.iter (
-        DotNet.build (fun bo ->
-          { bo with
-              Configuration = configuration
-              NoRestore = true
-              OutputPath = Some buildOutput}))
-
-    Trace.log "Removing the annoying language resources..."
-    Directory.GetDirectories(buildOutput)
-    |> Seq.filter (fun dir -> Regex.IsMatch(dir, @"[\\\\/][a-z]{2}(?:-[A-z]{2,})?$"))
-    |> Shell.deleteDirs
 
 Target.create "Build" (fun _ ->
-  build()
-)
+    let configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
+    // needs to use var or somethin' to check build mode
+    !! "**/*.*proj"
+    |> Seq.iter (DotNet.build (fun parms -> { parms with Configuration = configuration }))
 
-Target.create "Clean" (fun _ ->
-  !! "**/bin"
-  ++ "**/obj"
-  -- "**/.fable/**"
-  -- "**/node_modules/**"
-  ++ buildOutput
-  |> Shell.cleanDirs
-)
-
-Target.create "CleanedBuild" (fun _ ->
-  build()
+    // https://medium.com/@stef.heyenrath/show-a-loading-progress-indicator-for-a-blazor-webassembly-application-ea28595ff8c1
+    !! "**/blazor.webassembly.js"
+    |> Seq.iter (fun path ->
+      let text = File.readAsString path
+      let newText = text.Replace(@"return r.loadResource(o,t(o),e[o],n)", @"var p = r.loadResource(o,t(o),e[o],n); p.response.then((x) => { if (typeof window.loadResourceCallback === 'function') { window.loadResourceCallback(Object.keys(e).length, o, x);}}); return p;")
+      File.writeString false path newText
+    )
 )
 
 Target.create "Run" (fun _ ->
-  CreateProcess.fromRawCommandLine (Path.Combine(buildOutput, "server.exe")) String.Empty
-  |> CreateProcess.withWorkingDirectory buildOutput
-  |> Proc.run
+  let configuration = Environment.environVarOrDefault "Configuration" "Debug"
+  // I need to find a better way
+  let server = !! (sprintf "DogPark.Server/bin/%s/*/Server.exe" configuration) |> Seq.head
+  Shell.Exec(server, dir = "DogPark.Server")
   |> ignore
-)
-
-Target.create "Publish" (fun _ ->
-  let publishPath = Environment.environVarOrDefault "output" "published/"
-  Directory.ensure publishPath
-  Shell.copyRecursive buildOutput publishPath true
-  |> Trace.logItems "Publish! - "
 )
 
 Target.create "All" ignore
 
-"Restore"
+"Clean"
   ==> "Build"
   ==> "Run"
   ==> "All"
-
-"Clean"
-  ==> "Restore"
-  ==> "CleanedBuild"
-  ==> "Publish"
 
 Target.runOrDefault "All"

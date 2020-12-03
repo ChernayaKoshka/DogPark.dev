@@ -1,52 +1,36 @@
 [<AutoOpen>]
 module DogPark.Authentication.RoleStore
 
-open DogPark.Authentication.Types
 open Microsoft.AspNetCore.Identity
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Control.Tasks.V2.ContextInsensitive
-open Microsoft.Extensions.Configuration
-open MySql.Data.MySqlClient
-open Dapper
+open DogPark
 
-type MariaDBRoleStore(config : IConfiguration) =
-    let connectionString = config.GetValue "MariaDB"
+type MariaDBRoleStore(queries: Queries) =
     interface IRoleStore<Role> with
         member this.CreateAsync (role: Role, cancellationToken: CancellationToken) : Task<IdentityResult> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            let! id = con.QuerySingleAsync<int>(@"INSERT INTO role (Name, NormalizedName) VALUES (@Name, @NormalizedName); SELECT CAST(last_insert_id() as int)", role)
-            role.Role <- id
+            let! id = queries.RoleCreate(role, cancellationToken)
+            role.IDRole <- id
             return IdentityResult.Success
         }
 
         member this.DeleteAsync (role: Role, cancellationToken: CancellationToken) : Task<IdentityResult> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            let! _ = con.ExecuteAsync("DELETE FROM role WHERE Role = @Role", role)
+            do! queries.RoleDelete(role, cancellationToken)
             return IdentityResult.Success
         }
 
-        member this.FindByIdAsync (roleId: string, cancellationToken: CancellationToken) : Task<Role> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            return! con.QuerySingleOrDefaultAsync<Role>(@"SELECT * FROM role WHERE Role = @Role", {| Role = int roleId |});
-        }
+        member this.FindByIdAsync (roleId: string, cancellationToken: CancellationToken) : Task<Role> =
+            queries.RoleFindById (roleId, cancellationToken)
 
-        member this.FindByNameAsync (normalizedRoleName: string, cancellationToken: CancellationToken) : Task<Role> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            return! con.QuerySingleOrDefaultAsync<Role>(@"SELECT * FROM role WHERE NormalizedName = @NormalizedName", {| NormalizedName = normalizedRoleName |});
-        }
+        member this.FindByNameAsync (normalizedRoleName: string, cancellationToken: CancellationToken) : Task<Role> =
+            queries.RoleFindByName(normalizedRoleName, cancellationToken)
+
         member this.GetNormalizedRoleNameAsync (role: Role, cancellationToken: CancellationToken) : Task<string> =
             Task.FromResult role.NormalizedName
 
         member this.GetRoleIdAsync (role: Role, cancellationToken: CancellationToken) : Task<string> =
-            role.Role
+            role.IDRole
             |> string
             |> Task.FromResult
 
@@ -62,10 +46,7 @@ type MariaDBRoleStore(config : IConfiguration) =
             Task.CompletedTask
 
         member this.UpdateAsync (role: Role, cancellationToken: CancellationToken) : Task<IdentityResult> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            let! _ = con.ExecuteAsync(@"UPDATE role SET Name = @Name, NormalizedName = @NormalizedName WHERE Role = @Role", role)
+            do! queries.RoleUpdate(role, cancellationToken)
             return IdentityResult.Success
         }
 

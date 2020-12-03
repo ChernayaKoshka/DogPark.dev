@@ -10,6 +10,7 @@ published/
 output/
 **/DogPark-Articles/*.md
 appsettings*json
+!appsettings.test.json
 
 # User-specific files
 *.rsuser

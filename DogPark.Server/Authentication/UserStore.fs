@@ -8,154 +8,81 @@ open System.Threading.Tasks
 open System.Linq
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open Microsoft.Extensions.Configuration
-open MySqlConnector 
+open MySqlConnector
 open MySql.Data.MySqlClient
 open Dapper
+open DogPark
 
-let private roleFromName (con : MySqlConnection) (name : string) = task {
-    return! con.QuerySingleAsync<Role>(@"SELECT * FROM role WHERE Name = @Name", {| Name = name |})
-}
-
-type MariaDBStore(config : IConfiguration) =
-    let connectionString = config.GetValue("MariaDB")
+type MariaDBStore(queries: Queries) =
     interface IUserStore<User> with
         member __.Dispose(): unit =
             ()
 
         member __.CreateAsync(user: User, cancellationToken: CancellationToken): Task<IdentityResult> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            let! id = con.QuerySingleAsync<int>(@"INSERT INTO user (UserName, NormalizedUserName, PasswordHash) VALUES (@UserName, @NormalizedUserName, @PasswordHash); SELECT CAST(last_insert_id() as int)", user)
-            user.User <- id
+            let! id = queries.UserCreate(user, cancellationToken)
+            user.IDUser <- id
             return IdentityResult.Success
         }
 
         member __.DeleteAsync(user: User, cancellationToken: CancellationToken): Task<IdentityResult> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            let! _ = con.ExecuteAsync("DELETE FROM user WHERE User = @User", user)
+            do! queries.UserDelete(user, cancellationToken)
             return IdentityResult.Success
         }
 
-        member __.FindByIdAsync(userId: string, cancellationToken: CancellationToken): Task<User> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            return! con.QuerySingleOrDefaultAsync<User>("SELECT * FROM user WHERE User = @User", {| User = userId |})
-        }
+        member __.FindByIdAsync(userId: string, cancellationToken: CancellationToken): Task<User> =
+            queries.UserFindById(int userId, cancellationToken)
 
-        member __.FindByNameAsync(normalizedUserName: string, cancellationToken: CancellationToken): Task<User> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            return! con.QuerySingleOrDefaultAsync<User>("SELECT * FROM user WHERE NormalizedUserName = @NormalizedUserName", {| NormalizedUserName = normalizedUserName |})
-        }
+        member __.FindByNameAsync(normalizedUserName: string, cancellationToken: CancellationToken): Task<User> =
+            queries.UserFindByName(normalizedUserName, cancellationToken)
 
-        member __.GetNormalizedUserNameAsync(user: User, cancellationToken: CancellationToken): Task<string> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            return user.NormalizedUserName
-        }
+        member __.GetNormalizedUserNameAsync(user: User, cancellationToken: CancellationToken): Task<string> =
+            Task.FromResult(user.NormalizedUserName)
 
-        member __.GetUserIdAsync(user: User, cancellationToken: CancellationToken): Task<string> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            return string user.User
-        }
+        member __.GetUserIdAsync(user: User, cancellationToken: CancellationToken): Task<string> =
+            Task.FromResult(string user.IDUser)
 
-        member __.GetUserNameAsync(user: User, cancellationToken: CancellationToken): Task<string> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            return user.UserName
-        }
+        member __.GetUserNameAsync(user: User, cancellationToken: CancellationToken): Task<string> =
+            Task.FromResult(user.UserName)
 
         member __.SetNormalizedUserNameAsync(user: User, normalizedName: string, cancellationToken: CancellationToken): Task =
             user.NormalizedUserName <- normalizedName
             Task.CompletedTask
 
-        member __.SetUserNameAsync(user: User, userName: string, cancellationToken: CancellationToken): Task = 
+        member __.SetUserNameAsync(user: User, userName: string, cancellationToken: CancellationToken): Task =
             user.UserName <- userName
             Task.CompletedTask
 
         member __.UpdateAsync(user: User, cancellationToken: CancellationToken): Task<IdentityResult> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            let! _ = con.ExecuteAsync("UPDATE user SET UserName = @UserName, PasswordHash = @PasswordHash WHERE User = @User", user)
+            do! queries.UserUpdate(user, cancellationToken)
             return IdentityResult.Success
         }
 
     interface IUserPasswordStore<User> with
-        member this.GetPasswordHashAsync(user : User, cancellationToken : CancellationToken): Task<string> = 
+        member this.GetPasswordHashAsync(user : User, cancellationToken : CancellationToken): Task<string> =
             Task.FromResult(user.PasswordHash)
 
         member this.HasPasswordAsync(user: User, cancellationToken: CancellationToken): Task<bool> =
             user.PasswordHash
-            |> String.IsNullOrWhiteSpace 
+            |> String.IsNullOrWhiteSpace
             |> not
             |> Task.FromResult
 
-        member this.SetPasswordHashAsync(user: User, passwordHash: string, cancellationToken: CancellationToken): Task = 
+        member this.SetPasswordHashAsync(user: User, passwordHash: string, cancellationToken: CancellationToken): Task =
             user.PasswordHash <- passwordHash
             Task.CompletedTask
 
     interface IUserRoleStore<User> with
-        member this.AddToRoleAsync(user: User, roleName: string, cancellationToken: CancellationToken): Task =
-            let doThing = task {
-                    cancellationToken.ThrowIfCancellationRequested()
-                    use con = new MySqlConnection(connectionString)
-                    do! con.OpenAsync()
-                    let! role = roleFromName con roleName
-                    let! _ = con.ExecuteAsync(@"INSERT INTO user_role (User, Role) VALUES (@User, @Role)", {| User = user.User; Role = role.Role |})
-                    return ()
-            }
-            doThing.Wait()
-            Task.CompletedTask
+        member this.AddToRoleAsync(user: User, normalizedRoleName: string, cancellationToken: CancellationToken): Task =
+            queries.UserAddToRole(user, normalizedRoleName, cancellationToken) :> Task
 
-        member this.GetRolesAsync(user: User, cancellationToken: CancellationToken): Task<Collections.Generic.IList<string>> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            let! res = 
-                con.QueryAsync<string>(
-                    @"
-                    SELECT Name FROM role
-                    JOIN user_role ur ON ur.Role = role.Role
-                    WHERE ur.User = @User
-                    ", 
-                    {| User = user.User |})
-            return res.ToList() :> Collections.Generic.IList<string>
-        }
+        member this.GetRolesAsync(user: User, cancellationToken: CancellationToken): Task<Collections.Generic.IList<string>> =
+            queries.UserGetRoles(user, cancellationToken)
 
-        member this.GetUsersInRoleAsync(roleName: string, cancellationToken: CancellationToken): Task<Collections.Generic.IList<User>> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            let! res = 
-                con.QueryAsync<User>(
-                    @"
-                    SELECT user.* FROM user user
-                    JOIN user_role ur ON ur.User = user.User
-                    JOIN role r ON ur.Role = r.Role
-                    WHERE r.Name = @RoleName
-                    ",
-                    {| RoleName = roleName |})
-            return res.ToList() :> Collections.Generic.IList<User>
-        }
-        member this.IsInRoleAsync(user: User, roleName: string, cancellationToken: CancellationToken): Task<bool> = task {
-            cancellationToken.ThrowIfCancellationRequested()
-            use con = new MySqlConnection(connectionString)
-            do! con.OpenAsync()
-            return!
-                con.QuerySingleAsync<bool>(
-                    @"
-                    SELECT COUNT(*) > 0 FROM user user
-                    JOIN user_role ur ON ur.User = user.User
-                    JOIN role r ON ur.Role = r.Role
-                    WHERE r.Name = @RoleName
-                    ",
-                    {| RoleName = roleName |})
-        }
-            
-        member this.RemoveFromRoleAsync(user: User, roleName: string, cancellationToken: CancellationToken): Task = 
-            failwith "Not Implemented"
- 
+        member this.GetUsersInRoleAsync(normalizedRoleName: string, cancellationToken: CancellationToken): Task<Collections.Generic.IList<User>> =
+            queries.UserGetInRole(normalizedRoleName, cancellationToken)
+
+        member this.IsInRoleAsync(user: User, normalizedRoleName: string, cancellationToken: CancellationToken): Task<bool> =
+            queries.UserIsInRole(user, normalizedRoleName, cancellationToken)
+
+        member this.RemoveFromRoleAsync(user: User, normalizedRoleName: string, cancellationToken: CancellationToken): Task =
+            queries.UserRemoveFromeRole(user, normalizedRoleName, cancellationToken) :> Task
