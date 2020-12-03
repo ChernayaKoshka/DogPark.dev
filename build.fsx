@@ -12,8 +12,9 @@ open Fake.Core.TargetOperators
 
 Target.initEnvironment ()
 
+let configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
 Target.create "Clean" (fun _ ->
-    match DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug with
+    match configuration with
     | DotNet.Debug ->
       Trace.log "Skipping clean because it's a debug build"
     | _ ->
@@ -23,11 +24,12 @@ Target.create "Clean" (fun _ ->
 )
 
 Target.create "Build" (fun _ ->
-    let configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
     // needs to use var or somethin' to check build mode
     !! "**/*.*proj"
     |> Seq.iter (DotNet.build (fun parms -> { parms with Configuration = configuration }))
+)
 
+Target.create "ApplyLoadingHack" (fun _ ->
     // https://medium.com/@stef.heyenrath/show-a-loading-progress-indicator-for-a-blazor-webassembly-application-ea28595ff8c1
     !! "**/blazor.webassembly.js"
     |> Seq.iter (fun path ->
@@ -45,11 +47,42 @@ Target.create "Run" (fun _ ->
   |> ignore
 )
 
+Target.create "CleanPublishDir" (fun _ ->
+  if Shell.testDir "Published" then
+    Shell.cleanDir "Published"
+)
+
+Target.create "CreatePublishArtifacts" (fun _ ->
+  Trace.log "Publishing"
+  // deliberately a blank string to force the entire solution to be published instead of publishing each individual project
+  DotNet.publish (fun parms -> { parms with Configuration = configuration; OutputPath = Some "Published" }) ""
+
+  Shell.deleteDir "Published/BlazorDebugProxy"
+
+  // stupid language resource that .NET thinks we need in every single application ever published
+  [ "cs"; "de"; "es"; "fr"; "it"; "ja"; "ko"; "pl"; "pt-BR"; "ru"; "tr"; "zh-Hans"; "zh-Hant" ]
+  |> Seq.map (sprintf "Published/%s")
+  |> Shell.deleteDirs
+
+  File.delete "Published/web.config"
+
+)
+
+Target.create "Publish" ignore
 Target.create "All" ignore
 
 "Clean"
   ==> "Build"
+  ?=> "ApplyLoadingHack"
   ==> "Run"
-  ==> "All"
+
+"Clean"
+  ==> "CleanPublishDir"
+  ==> "CreatePublishArtifacts"
+  ?=> "ApplyLoadingHack"
+  ==> "Publish"
+
+"CreatePublishArtifacts" ==> "Publish"
+"Build" ==> "Run"
 
 Target.runOrDefault "All"
