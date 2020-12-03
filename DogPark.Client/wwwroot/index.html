@@ -23,8 +23,9 @@
       <div class="column is-three-fifths">
         <p class="title has-text-centered" >Loading...</p>
         <p>
-          <progress class="progress is-large is-info" max="100"></progress>
+          <progress id="blazor-loading-bar" class="progress is-large is-info" max="100"></progress>
         </p>
+        <p id="blazor-loading-item" class="is-size-7"></p>
       </div>
     </div>
   </div>
@@ -33,10 +34,11 @@
     window.loadResourceCallback = (total, name, response) => {
         if (name.endsWith('.dll')) {
             i++;
-            const progressbar = document.getElementsByTagName("progress")[0];
-
+            const progressbar = document.getElementById("blazor-loading-bar");
+            const loadingItem = document.getElementById("blazor-loading-item")
             progressbar.setAttribute("value", i);
             progressbar.setAttribute("max", total);
+            loadingItem.innerText = name;
             console.log(i + '/' + total + ' (' + i + ') ' + name);
         }
     }
