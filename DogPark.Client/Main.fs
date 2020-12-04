@@ -144,7 +144,7 @@ let articlesView model dispatch =
 type Article = Template<"./wwwroot/templates/article.html">
 let articleView model dispatch =
     View()
-        .Head(link [ attr.rel "stylesheet"; attr.href "css/vs2015.css" ])
+        .Head(link [ attr.rel "stylesheet"; attr.href "css/vs.css" ])
         .Content(
             div [ ] [
                 cond model.Article <| function
