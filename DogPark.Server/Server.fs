@@ -27,6 +27,7 @@ open FSharp.Control.Tasks.V2.ContextInsensitive
 open System.Runtime.InteropServices
 open System.Threading.Tasks
 open System.Text.Json
+open Serilog.Context
 
 // ---------------------------------
 // Web app
@@ -200,6 +201,14 @@ let configureApp (app : IApplicationBuilder) =
                 ServerErrors.internalError (text "Something went wrong")
         )
     )
+        .Use(fun (ctx: HttpContext) (next: Func<Task>) ->
+            let task = task {
+                use _ = (LogContext.PushProperty("IPAddress", ctx.Connection.RemoteIpAddress))
+                do! next.Invoke()
+            }
+            task :> Task
+        )
+        .UseSerilogRequestLogging(@"{IPAddress} HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms")
         .UseCors(configureCors)
         .UseResponseCaching()
         .UseStaticFiles()
