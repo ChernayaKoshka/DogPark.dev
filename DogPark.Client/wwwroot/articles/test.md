@@ -41,3 +41,19 @@ ullos est nil pater aliquisque amico semper currus deinde. Dedecus silentum,
 ibimus [hac ore nubila](http://www.corpora-fuit.com/amara) est, est. Superbum et
 conpagibus quam vix adflata fluit dominam. Haec unum fronde, [ambagibus
 vir](http://www.taenarius.io/validi-quoque) volat a Latia **tristia noster**.
+
+```fsharp
+type Article = Template<"./wwwroot/templates/article.html">
+let articleView model dispatch =
+    div [ ] [
+        cond model.Article <| function
+        | Some article ->
+            Article()
+                .Title(article.Details.Headline)
+                .Subtitle($"Author: {article.Details.Author} @ {article.Details.Created}")
+                .Content(RawHtml article.HtmlBody)
+                .Elt()
+        | None ->
+            text "Loading..."
+    ]
+```
