@@ -120,48 +120,85 @@ let update message model =
         }, Cmd.none
     | DoNothing -> model, Cmd.none
 
+type View = Template<"./wwwroot/templates/realIndex.html">
 let articlesView model dispatch =
-    div [ ] [
-        ul [ ] [
-            forEach
-                model.ArticlesList
-                (fun al ->
-                    li [ ] [
-                        text $"{al.Author} @ {al.Created} - "
-                        a [ router.HRef (Article al.Id) ] [ text al.Headline ]
-                    ]
-                )
-        ]
-    ]
+    View()
+        .Head(Empty)
+        .Content(
+            div [ ] [
+                ul [ ] [
+                    forEach
+                        model.ArticlesList
+                        (fun al ->
+                            li [ ] [
+                                text $"{al.Author} @ {al.Created} - "
+                                a [ router.HRef (Article al.Id) ] [ text al.Headline ]
+                            ]
+                        )
+                ]
+            ]
+        )
+        .Scripts(Empty)
+        .Elt()
 
 type Article = Template<"./wwwroot/templates/article.html">
 let articleView model dispatch =
-    div [ ] [
-        cond model.Article <| function
-        | Some article ->
-            Article()
-                .Title(article.Details.Headline)
-                .Subtitle($"Author: {article.Details.Author} @ {article.Details.Created}")
-                .Content(RawHtml article.HtmlBody)
-                .Elt()
-        | None ->
-            text "Loading..."
-    ]
+    View()
+        .Head(link [ attr.rel "stylesheet"; attr.href "css/vs2015.css" ])
+        .Content(
+            div [ ] [
+                cond model.Article <| function
+                | Some article ->
+                    Article()
+                        .Title(article.Details.Headline)
+                        .Subtitle($"Author: {article.Details.Author} @ {article.Details.Created}")
+                        .Content(RawHtml article.HtmlBody)
+                        .Elt()
+                | None ->
+                    text "Loading..."
+            ]
+        )
+        .Scripts(
+            concat [
+                script [ attr.src "scripts/highlight.pack.js" ] [ ]
+                cond model.Article <| function
+                | Some _ ->
+                    concat [
+                        script [ ] [
+                            text
+                                """
+                                var blocks = document.querySelectorAll('pre code:not(.hljs)');
+                                Array.prototype.forEach.call(blocks, hljs.highlightBlock);
+                                """
+                        ]
+                    ]
+                | None ->
+                    empty
+            ]
+        )
+        .Elt()
 
 let homeView model dispatch =
-    div [ ] [
-        p [ ] [ text "Hello, world!" ]
-        text $"Ping Result: {model.PingResult}"
-        p [ ] [ button [ on.click (fun _ -> printfn "Dispatching"; dispatch Ping); ] [ text "Ping!" ] ]
-    ]
+    View()
+        .Head(Empty)
+        .Content(
+            div [ ] [
+                p [ ] [ text "Hello, world!" ]
+                text $"Ping Result: {model.PingResult}"
+                p [ ] [ button [ on.click (fun _ -> printfn "Dispatching"; dispatch Ping); ] [ text "Ping!" ] ]
+            ]
+        )
+        .Scripts(Empty)
+        .Elt()
 
 let view model dispatch =
-    div [ attr.``class`` "container" ] [
-        cond model.Page <| function
-        | Home -> homeView model dispatch
-        | Article id -> articleView model dispatch
-        | Articles -> articlesView model dispatch
-    ]
+    cond model.Page <| function
+    | Home ->
+        homeView model dispatch
+    | Article id ->
+        articleView model dispatch
+    | Articles ->
+        articlesView model dispatch
 
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
