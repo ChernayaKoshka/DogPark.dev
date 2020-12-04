@@ -145,7 +145,7 @@ let webApp =
                                 >=> getAllArticles
 
                             routef "/article/%d" (fun (id: int64) ->
-                                publicResponseCaching (int (TimeSpan.FromDays(1.).TotalSeconds)) None
+                                publicResponseCaching (int (TimeSpan.FromSeconds(30.).TotalSeconds)) None
                                 >=> handleArticle (uint32 id)
                             )
 
