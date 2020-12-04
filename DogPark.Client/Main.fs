@@ -134,7 +134,7 @@ let articlesView model dispatch =
         ]
     ]
 
-type Article = Template<"./wwwroot/article.html">
+type Article = Template<"./wwwroot/templates/article.html">
 let articleView model dispatch =
     div [ ] [
         cond model.Article <| function
