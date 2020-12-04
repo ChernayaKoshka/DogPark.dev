@@ -255,12 +255,14 @@ let configureLogging (config: IConfigurationRoot) =
             .Enrich.FromLogContext()
             .WriteTo.Console(restrictedToMinimumLevel = LogEventLevel.Debug, theme = Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code)
             .WriteTo.File(System.IO.Path.Combine(logRoot, "server.log"), restrictedToMinimumLevel = LogEventLevel.Verbose, rollingInterval = RollingInterval.Day)
+            #if !DEBUG
             .WriteTo.MariaDB(
                 connectionString = config.["MariaDB"],
                 tableName = "logs",
                 autoCreateTable = true,
                 useBulkInsert = false
             )
+            #endif
             .CreateLogger()
 
 type EExitCode =
