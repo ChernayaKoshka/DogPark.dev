@@ -13,6 +13,7 @@ open Fake.Core.TargetOperators
 Target.initEnvironment ()
 
 let configuration = DotNet.BuildConfiguration.fromEnvironVarOrDefault "Configuration" DotNet.Debug
+
 Target.create "Clean" (fun _ ->
     match configuration with
     | DotNet.Debug ->
@@ -21,6 +22,13 @@ Target.create "Clean" (fun _ ->
       !! "**/bin"
       ++ "**/obj"
       |> Shell.cleanDirs
+)
+
+let sass = "tools/dart-sass/sass.bat"
+Target.create "BuildCss" (fun _ ->
+  let exitCode = Shell.Exec(sass, "--no-source-map DogPark.Client/bulma/style.scss:DogPark.Client/wwwroot/css/style.css")
+  if exitCode <> 0 then raise <| exn(sprintf "Exit code from '%s' was %d!" sass exitCode)
+  else ()
 )
 
 Target.create "Build" (fun _ ->
@@ -72,16 +80,20 @@ Target.create "Publish" ignore
 Target.create "All" ignore
 
 "Clean"
+  ?=> "BuildCss"
   ==> "Build"
   ?=> "ApplyLoadingHack"
   ==> "Run"
 
 "Clean"
   ==> "CleanPublishDir"
+  ?=> "BuildCss"
   ==> "CreatePublishArtifacts"
   ?=> "ApplyLoadingHack"
   ==> "Publish"
 
+"Clean" ==> "Build"
+"CleanPublishDir" ==> "CreatePublishArtifacts"
 "CreatePublishArtifacts" ==> "Publish"
 "Build" ==> "Run"
 
