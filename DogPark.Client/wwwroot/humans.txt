@@ -1,0 +1,29 @@
+/* Team */
+Name: ChernayaKoshka
+Site: This one, obviously. But also github!: https://github.com/ChernayaKoshka/DogPark.dev
+Discord: Cerberus#5570
+
+/* Site */
+Last update: 2020/12/04
+Components: F#, Bolero, Blazor and Web Assembly
+Software: VSCode and .NET 5!
+Hardware:
+        ................           OS: Alpine Linux
+       ∴::::::::::::::::∴          Kernel: x86_64 Linux 5.4.71-0-lts
+      ∴::::::::::::::::::∴         Uptime: 50d 5h 9m (as of 2020/12/4)
+     ∴::::::::::::::::::::∴        Shell: ash
+    ∴:::::::. :::::':::::::∴       CPU: Intel Xeon E3-1225 v5 @ 4x 3.7GHz
+   ∴:::::::.   ;::; ::::::::∴      GPU: Intel Corporation HD Graphics P530 (rev 06)
+  ∴::::::;      ∵     :::::::∴     RAM: 7833MiB
+ ∴:::::.     .         .::::::∴
+ ::::::     :::.    .    ::::::
+ ∵::::     ::::::.  ::.   ::::∵
+  ∵:..   .:;::::::: :::.  :::∵
+   ∵::::::::::::::::::::::::∵
+    ∵::::::::::::::::::::::∵
+     ∵::::::::::::::::::::∵
+      ::::::::::::::::::::
+       ∵::::::::::::::::∵
+
+
+Thanks for visiting!

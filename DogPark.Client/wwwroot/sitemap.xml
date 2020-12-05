@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+<url>
+  <loc>https://dogpark.dev/</loc>
+  <lastmod>2020-12-05T06:19:23+00:00</lastmod>
+</url>
+
+<url>
+  <loc>"https://dogpark.dev/Articles"</loc>
+  <lastmod>2020-12-05T06:19:23+00:00</lastmod>
+</url>
+
+<url>
+  <loc>"https://dogpark.dev/Article/1"</loc>
+  <lastmod>2020-12-05T06:19:23+00:00</lastmod>
+</url>
+
+</urlset>

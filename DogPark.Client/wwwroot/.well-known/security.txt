@@ -1,0 +1,3 @@
+Contact: https://github.com/ChernayaKoshka/DogPark.dev
+Acknowledgments: https://dogpark.dev/hall-of-fame
+Preferred-Languages: en
