@@ -182,12 +182,7 @@ let webApp =
                 RequestErrors.notFound (error "No such API")
             ]
         )
-        GET >=>
-            #if DEBUG
-            htmlFile (Path.Combine(webRoot, "index.html"))
-            #else
-            htmlFile "./wwwroot/index.html"
-            #endif
+        GET >=> htmlFile (Path.Combine(webRoot, "index.html"))
         setStatusCode 404 >=> text "Not Found"
     ]
 
