@@ -23,4 +23,7 @@ iptables -A INPUT -p tcp -m multiport --dports http,https -s 131.0.72.0/22 -j AC
 iptables -A INPUT -s 192.168.0.0/24 -j ACCEPT
 iptables -A INPUT -s 127.0.0.0/8 -j ACCEPT
 
-IPTABLES -P INPUT DROP
+# Allow all inbound traffic related to a local request
+iptables -I INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+iptables -P INPUT DROP
