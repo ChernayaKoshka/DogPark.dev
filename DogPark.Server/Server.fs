@@ -28,6 +28,7 @@ open System.Runtime.InteropServices
 open System.Threading.Tasks
 open System.Text.Json
 open Serilog.Context
+open Microsoft.Net.Http.Headers
 
 // ---------------------------------
 // Web app
@@ -201,19 +202,20 @@ let configureApp (app : IApplicationBuilder) =
                 ServerErrors.internalError (text "Something went wrong")
         )
     )
+        .UseForwardedHeaders()
         .Use(fun (ctx: HttpContext) (next: Func<Task>) ->
             let task = task {
                 use _ = (LogContext.PushProperty("IPAddress", ctx.Connection.RemoteIpAddress))
+                use _ = (LogContext.PushProperty("UserAgent", ctx.Request.Headers.[HeaderNames.UserAgent]))
                 do! next.Invoke()
             }
             task :> Task
         )
-        .UseSerilogRequestLogging(@"{IPAddress} HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms")
+        .UseSerilogRequestLogging(@"{IPAddress}:{UserAgent} HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms")
         .UseCors(configureCors)
         .UseResponseCaching()
         .UseStaticFiles()
         .UseBlazorFrameworkFiles()
-        .UseForwardedHeaders()
         .UseAuthentication()
 
         .UseGiraffe(webApp)
