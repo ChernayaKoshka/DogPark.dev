@@ -156,11 +156,11 @@ let webApp =
                             route "/ping" >=> text "pong"
 
                             route "/article"
-                                >=> publicResponseCaching (int (TimeSpan.FromSeconds(30.).TotalSeconds)) None
+                                >=> publicResponseCaching (int (TimeSpan.FromHours(1.).TotalSeconds)) None
                                 >=> getAllArticles
 
                             routef "/article/%d" (fun (id: int64) ->
-                                publicResponseCaching (int (TimeSpan.FromSeconds(30.).TotalSeconds)) None
+                                publicResponseCaching (int (TimeSpan.FromHours(1.).TotalSeconds)) None
                                 >=> handleArticle (uint32 id)
                             )
 
