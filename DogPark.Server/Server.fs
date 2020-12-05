@@ -133,8 +133,20 @@ let mustBeLoggedIn: HttpHandler =
     error "You must be logged in."
     |> RequestErrors.unauthorized "Identity" "DogPark"
 
+let begoneBot =
+    [|0x0..0xD7FF|]
+    // reversing to make sure any closing brackets and whatnot are in opposite order (eg: ][) to (hopefully) fuck the bot
+    |> Array.rev
+    |> Array.map char
+    |> String
+    |> sprintf """</Begone, bot!>%s<Begone, bot!>"""
+
 let webApp =
     choose [
+        routeCix
+            """(?:[pP][hH][pP][mM][yY][aA][dD][mM][iI][nN]|/+wp-login\.php|/.git/HEAD|/TP/public/index\.php|/admin/login\.php|/allstat\.php|/cfg/|/cisco/|/config.*/|/firmware/|/linksys/|/login\.cgi|/phone/|/polycom/|/provision.*/|/run\.py|/struts|/wls-wsat|/wp-config\.php|/wuwu11\.php|/wwwroot\.rar|/rpc/trackback/)"""
+            >=> text begoneBot
+
         subRoute "/api"(
             choose [
                 subRoute "/v1" (
