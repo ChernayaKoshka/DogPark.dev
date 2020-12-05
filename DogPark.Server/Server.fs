@@ -200,6 +200,9 @@ let configureCors (builder : CorsPolicyBuilder) =
 
 let configureApp (app : IApplicationBuilder) =
     let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
+    let provider = FileExtensionContentTypeProvider()
+    provider.Mappings.[".txt"] <- "text/plain;charset=utf-8"
+
     (match env.IsDevelopment() with
     | true  ->
         app.UseDeveloperExceptionPage()
@@ -229,7 +232,12 @@ let configureApp (app : IApplicationBuilder) =
         .UseSerilogRequestLogging(@"{IPAddress}:{UserAgent} HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms")
         .UseCors(configureCors)
         .UseResponseCaching()
-        .UseStaticFiles()
+        .UseStaticFiles(
+            StaticFileOptions(
+                FileProvider = new PhysicalFileProvider(webRoot),
+                ContentTypeProvider = provider
+            )
+        )
         .UseBlazorFrameworkFiles()
         .UseAuthentication()
 
