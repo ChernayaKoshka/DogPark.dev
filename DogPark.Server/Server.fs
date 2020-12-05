@@ -29,6 +29,7 @@ open System.Threading.Tasks
 open System.Text.Json
 open Serilog.Context
 open Microsoft.Net.Http.Headers
+open System.Net
 
 // ---------------------------------
 // Web app
@@ -209,6 +210,13 @@ let configureApp (app : IApplicationBuilder) =
                 ServerErrors.internalError (text "Something went wrong")
         )
     )
+        .Use(fun (ctx: HttpContext) (next: Func<Task>) ->
+            let task = task {
+                Log.Debug("X-Forwarded-For: {Forwarded}", ctx.Request.Headers.["X-Forwarded-For"])
+                do! next.Invoke()
+            }
+            task :> Task
+        )
         .UseForwardedHeaders()
         .Use(fun (ctx: HttpContext) (next: Func<Task>) ->
             let task = task {
@@ -232,6 +240,30 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
         .Configure<ForwardedHeadersOptions>(
             fun (options: ForwardedHeadersOptions) ->
                 options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto
+                // https://www.cloudflare.com/ips-v4
+                [
+                    "173.245.48.0", 20
+                    "103.21.244.0", 22
+                    "103.22.200.0", 22
+                    "103.31.4.0", 22
+                    "141.101.64.0", 18
+                    "108.162.192.0", 18
+                    "190.93.240.0", 20
+                    "188.114.96.0", 20
+                    "197.234.240.0", 22
+                    "198.41.128.0", 17
+                    "162.158.0.0", 15
+                    "104.16.0.0", 12
+                    "172.64.0.0", 13
+                    "131.0.72.0", 22
+                ]
+                |> List.map (fun (ip, range) ->
+                    IPNetwork(IPAddress.Parse(ip), range)
+                )
+                |> List.iter options.KnownNetworks.Add
+
+                // I'm behind Cloudflare _and_ Caddy, meaning we need to read two entries before we get the actual IP
+                options.ForwardLimit <- 2
         )
         .AddSingleton<Queries>(
             fun _ -> Queries(config.["MariaDB"])
