@@ -1,15 +1,18 @@
-www.dogpark.dev {
+(default_reverse_proxy) {
   log {
-    output file ./logs/www.dogpark.dev.json
+    output file /var/log/caddy.json
     format json
   }
-  reverse_proxy localhost:7777
+  tls {
+      dns cloudflare {$CLOUDFLARE_DNS_TOKEN}
+  }
+  reverse_proxy localhost:{args.0}
 }
 
-dogpark.dev {
-  log {
-    output file ./logs/dogpark.dev.json
-    format json
-  }
-  reverse_proxy localhost:7777
+dogpark.dev, www.dogpark.dev {
+  import default_reverse_proxy 7777
+}
+
+jellyfin.dogpark.dev {
+  import default_reverse_proxy 8096
 }
