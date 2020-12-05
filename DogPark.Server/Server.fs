@@ -30,6 +30,8 @@ open System.Text.Json
 open Serilog.Context
 open Microsoft.Net.Http.Headers
 open System.Net
+open Microsoft.AspNetCore.StaticFiles
+open System.Net.Http
 
 // ---------------------------------
 // Web app
@@ -248,29 +250,23 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
         .Configure<ForwardedHeadersOptions>(
             fun (options: ForwardedHeadersOptions) ->
                 options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto
-                // https://www.cloudflare.com/ips-v4
-                [
-                    "173.245.48.0", 20
-                    "103.21.244.0", 22
-                    "103.22.200.0", 22
-                    "103.31.4.0", 22
-                    "141.101.64.0", 18
-                    "108.162.192.0", 18
-                    "190.93.240.0", 20
-                    "188.114.96.0", 20
-                    "197.234.240.0", 22
-                    "198.41.128.0", 17
-                    "162.158.0.0", 15
-                    "104.16.0.0", 12
-                    "172.64.0.0", 13
-                    "131.0.72.0", 22
-                ]
-                |> List.map (fun (ip, range) ->
-                    IPNetwork(IPAddress.Parse(ip), range)
-                )
-                |> List.iter options.KnownNetworks.Add
 
-                // I'm behind Cloudflare _and_ Caddy, meaning we need to read two entries before we get the actual IP
+                Log.Debug("Fetching latest IP ranges from Cloudflare")
+                use client = new HttpClient(BaseAddress = Uri("https://www.cloudflare.com/"))
+                use response = client.Send(new HttpRequestMessage(HttpMethod.Get, "ips-v4")).EnsureSuccessStatusCode()
+                use reader = new StreamReader(response.Content.ReadAsStream())
+                reader
+                    .ReadToEnd()
+                    .Replace("\r", "")
+                    .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                |> Array.map (fun ip ->
+                    Log.Debug("Adding '{IP}' from response", ip)
+                    let [| ip; range |] = ip.Split('/')
+                    IPNetwork(IPAddress.Parse(ip), int range)
+                )
+                |> Array.iter options.KnownNetworks.Add
+
+                // I'm behind Cloudflare _and_ Caddy, meaning we need to read two entries
                 options.ForwardLimit <- 2
         )
         .AddSingleton<Queries>(
