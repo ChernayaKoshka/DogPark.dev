@@ -101,9 +101,11 @@ let loginHandler: HttpHandler =
             let signInManager = ctx.GetService<SignInManager<User>>()
             let! result = signInManager.PasswordSignInAsync(model.Username, model.Password, true, false)
             if result.Succeeded then
-                return! jmessage "success" next ctx
+                let userManager = ctx.GetService<UserManager<User>>()
+                let! user = userManager.FindByNameAsync(model.Username)
+                return! json { Success = true; Details = Some { Username = user.UserName }; Message = None } next ctx
             else
-                return! jnotauthorized result next ctx
+                return! jnotauthorized { Success = false; Details = None; Message = Some "Sign in failed." } next ctx
     }
 
 let logoutHandler: HttpHandler =
