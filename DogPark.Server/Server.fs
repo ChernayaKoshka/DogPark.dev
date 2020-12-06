@@ -179,7 +179,8 @@ let webApp =
 
                             route "/ip" >=> fun next ctx -> text (string ctx.Connection.RemoteIpAddress) next ctx
                             route "/am/i/local" >=> mustBeLocal >=> text "you're local"
-                            route "/am/i/loggedin" >=> requiresAuthentication (text "no") >=> text "yes"
+                            route "/am/i/loggedin" >=> requiresAuthentication (error "You're not logged in.") >=> jmessage "You're logged in."
+                            route "/account/details" >=> requiresAuthentication (error "You're not logged in.") >=> accountDetails
                         ]
                         POST >=> choose [
                             route "/seed" >=> mustBeLocal >=> seed
