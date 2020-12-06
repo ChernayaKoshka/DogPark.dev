@@ -1,5 +1,7 @@
 module DogPark.Client.Main
 
+// fsharplint:disable CanBeReplacedWithComposition
+
 open Elmish
 open Bolero
 open Bolero.Html
