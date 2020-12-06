@@ -112,7 +112,7 @@ let logoutHandler: HttpHandler =
     fun next ctx -> task {
         let signInManager = ctx.GetService<SignInManager<User>>()
         do! signInManager.SignOutAsync()
-        return! setStatusCode StatusCodes.Status200OK next ctx
+        return! jmessage "success" next ctx
     }
 
 let changePassword: HttpHandler =
