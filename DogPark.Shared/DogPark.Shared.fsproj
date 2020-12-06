@@ -6,6 +6,11 @@
 
   <ItemGroup>
     <Compile Include="Types.fs" />
+    <Compile Include="Shared.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.SystemTextJson" Version="0.15.14" />
   </ItemGroup>
 
 </Project>
