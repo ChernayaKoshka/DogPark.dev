@@ -115,6 +115,10 @@ let logoutHandler: HttpHandler =
         return! jmessage "success" next ctx
     }
 
+let mustBeLoggedIn: HttpHandler =
+    error "You must be logged in."
+    |> RequestErrors.unauthorized "Identity" "DogPark"
+
 let changePassword: HttpHandler =
     fun next ctx -> task {
         if isSignedIn ctx then
@@ -131,12 +135,17 @@ let changePassword: HttpHandler =
                 else
                     return! jnotauthorized result next ctx
         else
-            return! RequestErrors.unauthorized null "DogPark" (error "You're not authorized.") earlyReturn ctx
+            return! mustBeLoggedIn next ctx
     }
 
-let mustBeLoggedIn: HttpHandler =
-    error "You must be logged in."
-    |> RequestErrors.unauthorized "Identity" "DogPark"
+let accountDetails: HttpHandler =
+    fun next ctx -> task {
+        if isSignedIn ctx then
+            return! json { Success = true; Details = Some { Username = ctx.User.Identity.Name }; Message = None } next ctx
+        else
+            return! mustBeLoggedIn next ctx
+    }
+
 
 let begoneBot =
     [|0x0..0xD7FF|]
