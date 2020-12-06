@@ -263,6 +263,7 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
             fun (options: ForwardedHeadersOptions) ->
                 options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto
 
+                #if !DEBUG
                 Log.Debug("Fetching latest IP ranges from Cloudflare")
                 use client = new HttpClient(BaseAddress = Uri("https://www.cloudflare.com/"))
                 use response = client.Send(new HttpRequestMessage(HttpMethod.Get, "ips-v4")).EnsureSuccessStatusCode()
@@ -280,6 +281,7 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
 
                 // I'm behind Cloudflare _and_ Caddy, meaning we need to read two entries
                 options.ForwardLimit <- 2
+                #endif
         )
         .AddSingleton<Queries>(
             fun _ -> Queries(config.["MariaDB"])
