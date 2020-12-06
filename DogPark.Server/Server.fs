@@ -37,8 +37,8 @@ open System.Net.Http
 // Web app
 // ---------------------------------
 
-let error (msg: string) = json {| Error = msg |}
-let jmessage (msg: string) = json {| Message = msg |}
+let error (msg: string) = json { Success = false; Message = msg }
+let jmessage (msg: string) = json { Success = true; Message = msg }
 let jnotauthorized o = RequestErrors.unauthorized "Identity" "DogPark" (json o)
 
 let handleArticle (idArticle: uint32): HttpHandler =
