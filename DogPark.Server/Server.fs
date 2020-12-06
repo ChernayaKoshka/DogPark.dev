@@ -306,7 +306,7 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
         .Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) ->
             options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto)
         .AddGiraffe()
-        .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(JsonSerializerOptions()))
+        .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(jsonOptions))
         .AddIdentity<User, Role>(
             fun options ->
                 // Password settings
