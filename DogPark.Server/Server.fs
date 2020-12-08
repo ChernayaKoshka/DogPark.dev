@@ -211,7 +211,7 @@ let webApp =
 
                             route "/ip" >=> fun next ctx -> text (string ctx.Connection.RemoteIpAddress) next ctx
                             route "/am/i/local" >=> mustBeLocal >=> text "you're local"
-                            route "/am/i/loggedin" >=> requiresAuthentication (error "You're not logged in.") >=> jmessage "You're logged in."
+                            route "/am/i/loggedIn" >=> requiresAuthentication (error "You're not logged in.") >=> jmessage "You're logged in."
                             route "/account/details" >=> requiresAuthentication (error "You're not logged in.") >=> accountDetails
                         ]
                         POST >=> choose [
@@ -220,7 +220,7 @@ let webApp =
                                 choose [
                                     route "/login" >=> loginHandler
                                     route "/logout" >=> logoutHandler
-                                    route "/changepassword" >=> requiresAuthentication mustBeLoggedIn >=> changePassword
+                                    route "/changePassword" >=> requiresAuthentication mustBeLoggedIn >=> changePassword
                                     route "/refreshToken" >=> refreshTokenHandler
                                 ]
                             )
