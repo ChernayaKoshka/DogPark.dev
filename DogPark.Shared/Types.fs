@@ -3,6 +3,7 @@
 module DogPark.Shared.Types
 
 open System
+open System.Security.Claims
 
 type ChangePasswordModel =
     {
@@ -47,6 +48,19 @@ type GenericResponse =
         Message: string
     }
 
+type RefreshToken =
+    {
+        Username: string
+        TokenString: string
+        ExpireAt: DateTime
+    }
+
+type JwtAuthResult =
+    {
+        AccessToken: string
+        RefreshToken: RefreshToken
+    }
+
 type AccountDetails =
     {
         Username: string
@@ -56,5 +70,18 @@ type AccountDetailsResponse =
     {
         Success: bool
         Details: AccountDetails option
+        Message: string option
+    }
+
+type LoginDetails =
+    {
+        Username: string
+        Jwt: JwtAuthResult
+    }
+
+type LoginResponse =
+    {
+        Success: bool
+        Details: LoginDetails option
         Message: string option
     }
