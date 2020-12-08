@@ -32,6 +32,11 @@ open Microsoft.Net.Http.Headers
 open System.Net
 open Microsoft.AspNetCore.StaticFiles
 open System.Net.Http
+open Microsoft.AspNetCore.Authentication.JwtBearer
+open Microsoft.IdentityModel.Tokens
+open System.Security.Claims
+open System.Security.Cryptography
+open System.Text.Json
 
 // ---------------------------------
 // Web app
@@ -99,19 +104,27 @@ let loginHandler: HttpHandler =
         else
             let! model = ctx.BindJsonAsync<LoginModel>()
             let signInManager = ctx.GetService<SignInManager<User>>()
-            let! result = signInManager.PasswordSignInAsync(model.Username, model.Password, true, false)
+            let! user = signInManager.UserManager.FindByNameAsync(model.Username)
+            let! result = signInManager.CheckPasswordSignInAsync(user, model.Password, false)
             if result.Succeeded then
-                let userManager = ctx.GetService<UserManager<User>>()
-                let! user = userManager.FindByNameAsync(model.Username)
-                return! json { Success = true; Details = Some { Username = user.UserName }; Message = None } next ctx
+                let jwtAuthManager = ctx.GetService<JwtAuthManager>()
+                let token = jwtAuthManager.GenerateTokens user.UserName [| Claim(ClaimTypes.Name, user.UserName) |] DateTime.Now
+                return! json { Success = true; Details = Some { Username = user.UserName; Jwt = token }; Message = None } next ctx
             else
                 return! jnotauthorized { Success = false; Details = None; Message = Some "Sign in failed." } next ctx
     }
 
 let logoutHandler: HttpHandler =
     fun next ctx -> task {
-        let signInManager = ctx.GetService<SignInManager<User>>()
-        do! signInManager.SignOutAsync()
+        if isSignedIn ctx |> not then
+            return! jmessage "success" next ctx
+        else
+        let jwtAuthManager = ctx.GetService<JwtAuthManager>()
+
+        ctx.User.Identity.Name
+        |> jwtAuthManager.Logout
+        |> ignore
+
         return! jmessage "success" next ctx
     }
 
@@ -141,11 +154,30 @@ let changePassword: HttpHandler =
 let accountDetails: HttpHandler =
     fun next ctx -> task {
         if isSignedIn ctx then
-            return! json { Success = true; Details = Some { Username = ctx.User.Identity.Name }; Message = None } next ctx
+            return! json { AccountDetailsResponse.Success = true; Details = Some { Username = ctx.User.Identity.Name }; Message = None } next ctx
         else
             return! mustBeLoggedIn next ctx
     }
 
+let refreshTokenHandler :HttpHandler =
+    fun next ctx -> task {
+        try
+            match ctx.TryGetRequestHeader HeaderNames.Authorization with
+            | Some bearer when bearer.StartsWith("Bearer ") ->
+                let token = bearer.["Bearer ".Length..]
+                let! refreshToken = ctx.BindJsonAsync<{| RefreshToken: string |}>()
+                let jwtAuthManager = ctx.GetService<JwtAuthManager>()
+                match jwtAuthManager.Refresh refreshToken.RefreshToken token DateTime.Now with
+                | Some refreshed ->
+                    return! json { Success = true; Details = Some { Username = ctx.User.Identity.Name; Jwt = refreshed }; Message = None } next ctx
+                | None ->
+                    return! RequestErrors.badRequest (error "Refresh token was either expired or otherwise invalid") next ctx
+            | _ ->
+                return! RequestErrors.badRequest (error "Invalid authorization header") next ctx
+        with
+        | :? JsonException ->
+            return! RequestErrors.badRequest (error "Refresh token missing or malformed") next ctx
+    }
 
 let begoneBot =
     [|0x0..0xD7FF|]
@@ -189,6 +221,7 @@ let webApp =
                                     route "/login" >=> loginHandler
                                     route "/logout" >=> logoutHandler
                                     route "/changepassword" >=> requiresAuthentication mustBeLoggedIn >=> changePassword
+                                    route "/refreshToken" >=> refreshTokenHandler
                                 ]
                             )
                         ]
@@ -296,16 +329,9 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
                 let queries = sp.GetRequiredService<Queries>()
                 new MariaDBRoleStore(queries)
         )
-        .ConfigureApplicationCookie(
-            fun options ->
-                options.ExpireTimeSpan <- TimeSpan.FromDays 150.0
-                options.LoginPath <- PathString "/login"
-                options.LogoutPath <- PathString "/logout"
-        )
-        .AddCors()
-        .Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) ->
-            options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto)
-        .AddGiraffe()
+    |> ignore
+
+    services
         .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(jsonOptions))
         .AddIdentity<User, Role>(
             fun options ->
@@ -313,6 +339,48 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
                 options.Password.RequiredLength <- 16
         )
         .AddDefaultTokenProviders()
+    |> ignore
+
+    services
+        .AddCors()
+        .Configure<ForwardedHeadersOptions>(fun (options : ForwardedHeadersOptions) ->
+            options.ForwardedHeaders <- ForwardedHeaders.XForwardedFor ||| ForwardedHeaders.XForwardedProto)
+    |> ignore
+
+    let privateRsaParams, publicRsaParams =
+        let keyFromConfig = config.GetValue<string> >> Convert.FromBase64String
+        use rsa = new RSACryptoServiceProvider(2048)
+
+        let mutable read = 0
+        rsa.ImportRSAPublicKey(ReadOnlySpan<byte>(keyFromConfig "jwtPublicKey"), &read)
+        read <- 0
+        rsa.ImportRSAPrivateKey(ReadOnlySpan<byte>(keyFromConfig "jwtPrivateKey"), &read)
+        rsa.ExportParameters(true), rsa.ExportParameters(false)
+
+    services
+        .AddSingleton<JwtAuthManager>(fun _ -> JwtAuthManager(privateRsaParams, "dogpark.dev", "dogpark.dev", 1., 2.))
+        .AddAuthentication(fun x ->
+            x.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
+            x.DefaultChallengeScheme <- JwtBearerDefaults.AuthenticationScheme
+        )
+        .AddJwtBearer(fun x ->
+            x.RequireHttpsMetadata <- true
+            x.SaveToken <- true
+            x.TokenValidationParameters <-
+                TokenValidationParameters(
+                    ValidateIssuer = true,
+                    ValidIssuer = "dogpark.dev",
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = RsaSecurityKey(publicRsaParams),
+                    ValidAudience = "dogpark.dev",
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromMinutes(1.)
+                )
+        )
+    |> ignore
+
+    services.AddGiraffe()
     |> ignore
 
 let configureLogging (config: IConfigurationRoot) =
@@ -325,7 +393,7 @@ let configureLogging (config: IConfigurationRoot) =
             .WriteTo.File(System.IO.Path.Combine(logRoot, "server.log"), restrictedToMinimumLevel = LogEventLevel.Verbose, rollingInterval = RollingInterval.Day)
             #if !DEBUG
             .WriteTo.MariaDB(
-                connectionString = config.["MariaDB"],
+                connectionString = config.["mariaDB"],
                 tableName = "logs",
                 autoCreateTable = true,
                 useBulkInsert = false
@@ -343,15 +411,16 @@ let main args =
     let config =
         try
             ConfigurationBuilder()
-                .AddJsonFile((
-                                #if DEBUG
-                                "appsettings.test.json"
-                                #else
-                                if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
-                                    "appsettings.json"
-                                else
-                                    "appsettings.windows.json"
-                                #endif
+                .AddJsonFile(
+                (
+                    #if DEBUG
+                    "appsettings.test.json"
+                    #else
+                    if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
+                        "appsettings.json"
+                    else
+                        "appsettings.windows.json"
+                    #endif
                 ), false)
                 .AddCommandLine(args)
                 .Build()
