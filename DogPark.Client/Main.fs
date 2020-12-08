@@ -216,34 +216,9 @@ let update message model =
         model, Cmd.none
 
 type View = Template<"./wwwroot/templates/realIndex.html">
-let articlesView model dispatch =
-    View()
+let articlesView (baseView: View) model dispatch =
+    baseView
         .Head(Empty)
-        .LoginoutButtonLink(
-            if model.AccountDetails.IsSome then
-                null
-            else
-                router.Link Page.Login
-        )
-        .LoginoutButtonText(
-            if model.AccountDetails.IsSome then
-                "Logout"
-            else
-                "Login"
-        )
-        .LoginoutButtonClicked((fun _ ->
-            if model.AccountDetails.IsSome then
-                dispatch Logout
-            )
-        )
-        .HelloText(
-            match model.AccountDetails with
-            | Some details ->
-                p [ attr.``class`` "navbar-item is-size-5" ] [
-                    text $"Hello, {details.Username}"
-                ]
-            | None -> Empty
-        )
         .Content(
             div [ ] [
                 ul [ ] [
@@ -262,34 +237,9 @@ let articlesView model dispatch =
         .Elt()
 
 type Article = Template<"./wwwroot/templates/article.html">
-let articleView model dispatch =
-    View()
+let articleView (baseView: View) model dispatch =
+    baseView
         .Head(link [ attr.rel "stylesheet"; attr.href "css/vs.css" ])
-        .LoginoutButtonLink(
-            if model.AccountDetails.IsSome then
-                null
-            else
-                router.Link Page.Login
-        )
-        .LoginoutButtonText(
-            if model.AccountDetails.IsSome then
-                "Logout"
-            else
-                "Login"
-        )
-        .LoginoutButtonClicked((fun _ ->
-            if model.AccountDetails.IsSome then
-                dispatch Logout
-            )
-        )
-        .HelloText(
-            match model.AccountDetails with
-            | Some details ->
-                p [ attr.``class`` "navbar-item is-size-5" ] [
-                    text $"Hello, {details.Username}"
-                ]
-            | None -> Empty
-        )
         .Content(
             div [ ] [
                 cond model.Article <| function
@@ -323,34 +273,9 @@ let articleView model dispatch =
         )
         .Elt()
 
-let homeView model dispatch =
-    View()
+let homeView (baseView: View) model dispatch =
+    baseView
         .Head(Empty)
-        .LoginoutButtonLink(
-            if model.AccountDetails.IsSome then
-                null
-            else
-                router.Link Page.Login
-        )
-        .LoginoutButtonText(
-            if model.AccountDetails.IsSome then
-                "Logout"
-            else
-                "Login"
-        )
-        .LoginoutButtonClicked((fun _ ->
-            if model.AccountDetails.IsSome then
-                dispatch Logout
-            )
-        )
-        .HelloText(
-            match model.AccountDetails with
-            | Some details ->
-                p [ attr.``class`` "navbar-item is-size-5" ] [
-                    text $"Hello, {details.Username}"
-                ]
-            | None -> Empty
-        )
         .Content(
             div [ ] [
                 p [ ] [ text "Hello, world!" ]
@@ -362,7 +287,7 @@ let homeView model dispatch =
         .Elt()
 
 type LoginView = Template<"./wwwroot/templates/login.html">
-let loginView model dispatch =
+let loginView (baseView: View) model dispatch =
     let login = Option.defaultValue LoginModel.Default model.Login
 
     (*
@@ -382,33 +307,8 @@ let loginView model dispatch =
             text "Login"
         ]
 
-    View()
+    baseView
         .Head(Empty)
-        .LoginoutButtonLink(
-            if model.AccountDetails.IsSome then
-                null
-            else
-                router.Link Page.Login
-        )
-        .LoginoutButtonText(
-            if model.AccountDetails.IsSome then
-                "Logout"
-            else
-                "Login"
-        )
-        .LoginoutButtonClicked((fun _ ->
-            if model.AccountDetails.IsSome then
-                dispatch Logout
-            )
-        )
-        .HelloText(
-            match model.AccountDetails with
-            | Some details ->
-                p [ attr.``class`` "navbar-item is-size-5" ] [
-                    text $"Hello, {details.Username}"
-                ]
-            | None -> Empty
-        )
         .Content(
             LoginView()
                 .Username(login.Username, (fun s -> dispatch (SetUsername s)))
@@ -421,15 +321,42 @@ let loginView model dispatch =
         .Elt()
 
 let view model dispatch =
+    let baseView =
+        View()
+            .LoginoutButtonLink(
+                if model.AccountDetails.IsSome then
+                    null
+                else
+                    router.Link Page.Login
+            )
+            .LoginoutButtonText(
+                if model.AccountDetails.IsSome then
+                    "Logout"
+                else
+                    "Login"
+            )
+            .LoginoutButtonClicked((fun _ ->
+                if model.AccountDetails.IsSome then
+                    dispatch Logout
+                )
+            )
+            .HelloText(
+                match model.AccountDetails with
+                | Some details ->
+                    p [ attr.``class`` "navbar-item is-size-5" ] [
+                        text $"Hello, {details.Username}"
+                    ]
+                | None -> Empty
+            )
     cond model.Page <| function
     | Home ->
-        homeView model dispatch
+        homeView baseView model dispatch
     | Article id ->
-        articleView model dispatch
+        articleView baseView model dispatch
     | Articles ->
-        articlesView model dispatch
+        articlesView baseView model dispatch
     | Page.Login ->
-        loginView model dispatch
+        loginView baseView model dispatch
 
 type MyApp() =
     inherit ProgramComponent<Model, Message>()
