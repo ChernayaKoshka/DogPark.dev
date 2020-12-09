@@ -373,7 +373,7 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
         rsa.ExportParameters(true), rsa.ExportParameters(false)
 
     services
-        .AddSingleton<JwtAuthManager>(fun _ -> JwtAuthManager(privateRsaParams, "dogpark.dev", "dogpark.dev", 1., 2.))
+        .AddSingleton<JwtAuthManager>(fun _ -> JwtAuthManager(privateRsaParams, "dogpark.dev", "dogpark.dev", TimeSpan.FromMinutes(15.), TimeSpan.FromDays(7.)))
         .AddAuthentication(fun x ->
             x.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
             x.DefaultChallengeScheme <- JwtBearerDefaults.AuthenticationScheme

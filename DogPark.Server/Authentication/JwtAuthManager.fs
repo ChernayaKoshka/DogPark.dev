@@ -34,7 +34,7 @@ type JwtAuthManager(privateRsaParams: RSAParameters, issuer, audience, accessTok
                 issuer = issuer,
                 audience = (if shouldAddAudienceClaim then audience else String.Empty),
                 claims = claims,
-                expires = now.AddMinutes(accessTokenExpiration),
+                expires = now.Add(accessTokenExpiration),
                 signingCredentials = SigningCredentials(RsaSecurityKey(privateRsaParams), SecurityAlgorithms.RsaSha256Signature)
             )
 
@@ -44,7 +44,7 @@ type JwtAuthManager(privateRsaParams: RSAParameters, issuer, audience, accessTok
             {
                 Username = username
                 TokenString = this.GenerateRefreshTokenString()
-                ExpireAt = now.AddMinutes(refreshTokenExpiration)
+                ExpireAt = now.Add(refreshTokenExpiration)
             }
 
         usersRefreshTokens.AddOrUpdate(username, refreshToken, (fun s t -> refreshToken))
