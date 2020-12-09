@@ -104,7 +104,8 @@ let setJwtRefreshTokenCookie (ctx: HttpContext) token =
         CookieOptions(
             HttpOnly = true,
             Secure = true,
-            Expires = DateTimeOffset(token.RefreshToken.ExpireAt)
+            Expires = DateTimeOffset(token.RefreshToken.ExpireAt),
+            Path = "/api/v1/account/refreshToken"
         )
     )
 
