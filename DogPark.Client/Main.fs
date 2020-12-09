@@ -15,6 +15,7 @@ open System.Threading.Tasks
 open DogPark.Shared
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open System.Net.Http.Headers
+open Blazored.LocalStorage
 
 type Api =
     {
@@ -44,7 +45,7 @@ type Api =
         AccountDetails: unit -> Task<AccountDetailsResponse>
 
         [<Path("account/refreshToken")>]
-        RefreshToken: {| RefreshToken: string |} -> Task<LoginResponse>
+        RefreshToken: unit -> Task<LoginResponse>
     }
     with
         #if DEBUG
@@ -62,15 +63,18 @@ type Page =
 type Model =
     {
         Page: Page
+
         Api: Api
         ApiClient: HttpClient
         ClientFactory: IHttpClientFactory
+        LocalStorage: ILocalStorageService
+
         PingResult: string
 
         ArticlesList: ArticleDetails seq
         Article: Article option
         Login: LoginModel option
-        LoginDetails: LoginDetails option
+        Username: string option
     }
 type Message =
     | SetPage of Page
@@ -84,7 +88,7 @@ type Message =
 
     | Login
     | LoginResult of LoginResponse
-    | BeginRefreshToken of RefreshToken
+    | BeginRefreshToken
 
     | Logout
     | LogoutResult of GenericResponse
@@ -95,8 +99,9 @@ type Message =
 
 let router = Router.infer SetPage (fun m -> m.Page)
 
-let initModel (clientFactory: IHttpClientFactory) =
+let initModel (clientFactory: IHttpClientFactory) (localStorage: ILocalStorageService) =
     let client = clientFactory.CreateClient(BaseAddress = Api.BaseUri)
+
     let api =
         match makeApi<Api> Api.BaseUri jsonOptions client with
         | Ok api -> api
@@ -107,12 +112,26 @@ let initModel (clientFactory: IHttpClientFactory) =
         Api = api
         ApiClient = client
         ClientFactory = clientFactory
+        LocalStorage = localStorage
         PingResult = "Press the Ping! button"
         ArticlesList = Seq.empty
         Article = None
         Login = None
-        LoginDetails = None
-    }, Cmd.none
+        Username = None
+    },
+    Cmd.OfTask.either
+        (fun _ -> task {
+            match! localStorage.ContainKeyAsync "JWT" with
+            | true ->
+                let! jwt = localStorage.GetItemAsStringAsync("JWT")
+                client.DefaultRequestHeaders.Authorization <- AuthenticationHeaderValue("Bearer", jwt)
+                return BeginRefreshToken
+            | false ->
+                return DoNothing
+        })
+        ()
+        id
+        (fun e -> printfn "%A" e; DoNothing)
 
 let update message model =
     match message with
@@ -175,27 +194,28 @@ let update message model =
             let decoded = jwtDecodeNoVerify details.Jwt.AccessToken
             model.ApiClient.DefaultRequestHeaders.Authorization <- AuthenticationHeaderValue("Bearer", details.Jwt.AccessToken)
             { model with
-                LoginDetails = Some details
+                Username = Some details.Username
             }, Cmd.batch [
                 Cmd.ofMsg (SetPage Home)
                 Cmd.OfTask.either
                     (fun () -> task {
                         printfn "Refreshing login token in %A" (decoded.ValidTo - DateTime.Now)
+                        do! model.LocalStorage.SetItemAsync("JWT", details.Jwt.AccessToken)
                         do! Task.Delay(decoded.ValidTo - DateTime.Now)
                         return ()
                     })
                     ()
-                    (fun _ -> BeginRefreshToken details.Jwt.RefreshToken)
+                    (fun _ -> BeginRefreshToken)
                     (fun err -> printfn "%A" err; DoNothing)
             ]
         | None ->
             printfn "error logging in"
-            { model with LoginDetails = None }, Cmd.none
-    | BeginRefreshToken token ->
+            { model with Username = None }, Cmd.none
+    | BeginRefreshToken ->
         model,
         Cmd.OfTask.either
             model.Api.RefreshToken
-            {| RefreshToken = token.TokenString |}
+            ()
             LoginResult
             (fun err -> printfn "%A" err; DoNothing)
 
@@ -208,7 +228,7 @@ let update message model =
             (fun err -> printfn "%A" err; DoNothing)
     | LogoutResult result ->
         if result.Success then
-            { model with LoginDetails = None }, Cmd.none
+            { model with Username = None }, Cmd.none
         else
             printfn "%A" result
             model, Cmd.none
@@ -341,27 +361,27 @@ let view model dispatch =
     let baseView =
         View()
             .LoginoutButtonLink(
-                if model.LoginDetails.IsSome then
+                if model.Username.IsSome then
                     null
                 else
                     router.Link Page.Login
             )
             .LoginoutButtonText(
-                if model.LoginDetails.IsSome then
+                if model.Username.IsSome then
                     "Logout"
                 else
                     "Login"
             )
             .LoginoutButtonClicked((fun _ ->
-                if model.LoginDetails.IsSome then
+                if model.Username.IsSome then
                     dispatch Logout
                 )
             )
             .HelloText(
-                match model.LoginDetails with
-                | Some details ->
+                match model.Username with
+                | Some username ->
                     p [ attr.``class`` "navbar-item is-size-5" ] [
-                        text $"Hello, {details.Username}"
+                        text $"Hello, {username}"
                     ]
                 | None -> Empty
             )
@@ -380,7 +400,8 @@ type MyApp() =
 
     override this.Program =
         let hcf = this.Services.GetService<IHttpClientFactory>()
-        Program.mkProgram (fun _ -> initModel hcf) update view
+        let localStorage = this.Services.GetService<ILocalStorageService>()
+        Program.mkProgram (fun _ -> initModel hcf localStorage) update view
         #if DEBUG
         |> Program.withConsoleTrace
         #endif
