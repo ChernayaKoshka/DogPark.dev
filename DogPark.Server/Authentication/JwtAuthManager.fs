@@ -16,7 +16,7 @@ type JwtAuthManager(privateRsaParams: RSAParameters, issuer, audience, accessTok
     member this.UsersRefreshTokensReadOnlyDictionary with get() = usersRefreshTokens.ToImmutableDictionary()
 
     member this.GenerateRefreshTokenString() =
-        let randomNumber: byte array = Array.zeroCreate 32
+        let randomNumber: byte array = Array.zeroCreate 128
         use rng = RandomNumberGenerator.Create()
         rng.GetBytes(randomNumber)
         Convert.ToBase64String(randomNumber)
@@ -71,7 +71,7 @@ type JwtAuthManager(privateRsaParams: RSAParameters, issuer, audience, accessTok
                             ValidAudience = audience,
                             ValidateAudience = true,
                             ValidateLifetime = validateLifetime,
-                            ClockSkew = TimeSpan.FromMinutes(0.)
+                            ClockSkew = TimeSpan.FromMinutes(1.)
                         ))
             Some (principal, validatedToken :?> JwtSecurityToken)
         with
