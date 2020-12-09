@@ -10,9 +10,11 @@ open EasyHttp
 open System
 open System.Net.Http
 open System.IO
+open System.Threading
 open System.Threading.Tasks
 open DogPark.Shared
 open FSharp.Control.Tasks.V2.ContextInsensitive
+open System.Net.Http.Headers
 
 type Api =
     {
@@ -29,18 +31,20 @@ type Api =
         Article: {| Id: uint32 |} -> Task<Article>
 
         [<Path("account/login")>]
-        Login: LoginModel -> Task<AccountDetailsResponse>
+        Login: LoginModel -> Task<LoginResponse>
 
         [<Path("account/logout")>]
         Logout: unit -> Task<GenericResponse>
 
-        [<Path("account/changepassword")>]
+        [<Path("account/changePassword")>]
         ChangePassword: ChangePasswordModel -> Task<GenericResponse>
 
         [<Method("GET")>]
         [<Path("account/details")>]
         AccountDetails: unit -> Task<AccountDetailsResponse>
 
+        [<Path("account/refreshToken")>]
+        RefreshToken: {| RefreshToken: string |} -> Task<LoginResponse>
     }
     with
         #if DEBUG
@@ -59,21 +63,19 @@ type Model =
     {
         Page: Page
         Api: Api
+        ApiClient: HttpClient
         ClientFactory: IHttpClientFactory
         PingResult: string
 
         ArticlesList: ArticleDetails seq
         Article: Article option
         Login: LoginModel option
-        AccountDetails: AccountDetails option
+        LoginDetails: LoginDetails option
     }
 type Message =
     | SetPage of Page
     | Ping
     | SetPingText of string
-
-    | GetAccountDetails
-    | GotAccountDetails of AccountDetailsResponse
 
     | GetArticlesList
     | GotArticlesList of ArticleDetails seq
@@ -81,7 +83,9 @@ type Message =
     | GotArticle of Article
 
     | Login
-    | LoginResult of AccountDetailsResponse
+    | LoginResult of LoginResponse
+    | BeginRefreshToken of RefreshToken
+
     | Logout
     | LogoutResult of GenericResponse
 
@@ -93,7 +97,6 @@ let router = Router.infer SetPage (fun m -> m.Page)
 
 let initModel (clientFactory: IHttpClientFactory) =
     let client = clientFactory.CreateClient(BaseAddress = Api.BaseUri)
-
     let api =
         match makeApi<Api> Api.BaseUri jsonOptions client with
         | Ok api -> api
@@ -102,13 +105,14 @@ let initModel (clientFactory: IHttpClientFactory) =
     {
         Page = Home
         Api = api
+        ApiClient = client
         ClientFactory = clientFactory
         PingResult = "Press the Ping! button"
         ArticlesList = Seq.empty
         Article = None
         Login = None
-        AccountDetails = None
-    }, Cmd.ofMsg GetAccountDetails
+        LoginDetails = None
+    }, Cmd.none
 
 let update message model =
     match message with
@@ -130,18 +134,6 @@ let update message model =
         }, Cmd.none
     | Ping ->
         model, Cmd.OfTask.perform model.Api.Ping () SetPingText
-
-    | GetAccountDetails ->
-        model,
-        Cmd.OfTask.either
-            model.Api.AccountDetails
-            ()
-            GotAccountDetails
-            (fun err -> printfn "%A" err; DoNothing)
-    | GotAccountDetails details ->
-        { model with
-            AccountDetails = details.Details
-        }, Cmd.none
 
     | GetArticlesList ->
         model,
@@ -179,9 +171,35 @@ let update message model =
             model, Cmd.none
     | LoginResult result ->
         printfn "%A" result
-        { model with
-            AccountDetails = result.Details
-        }, Cmd.ofMsg (SetPage Home)
+        match result.Details with
+        | Some details ->
+            let decoded = jwtDecodeNoVerify details.Jwt.AccessToken
+            model.ApiClient.DefaultRequestHeaders.Authorization <- AuthenticationHeaderValue("Bearer", details.Jwt.AccessToken)
+            { model with
+                LoginDetails = Some details
+            }, Cmd.batch [
+                Cmd.ofMsg (SetPage Home)
+                Cmd.OfTask.either
+                    (fun () -> task {
+                        printfn "Refreshing login token in %A" (decoded.ValidTo - DateTime.Now)
+                        do! Task.Delay(decoded.ValidTo - DateTime.Now)
+                        return ()
+                    })
+                    ()
+                    (fun _ -> BeginRefreshToken details.Jwt.RefreshToken)
+                    (fun err -> printfn "%A" err; DoNothing)
+            ]
+        | None ->
+            printfn "error logging in"
+            { model with LoginDetails = None }, Cmd.none
+    | BeginRefreshToken token ->
+        model,
+        Cmd.OfTask.either
+            model.Api.RefreshToken
+            {| RefreshToken = token.TokenString |}
+            LoginResult
+            (fun err -> printfn "%A" err; DoNothing)
+
     | Logout ->
         model,
         Cmd.OfTask.either
@@ -191,7 +209,7 @@ let update message model =
             (fun err -> printfn "%A" err; DoNothing)
     | LogoutResult result ->
         if result.Success then
-            { model with AccountDetails = None }, Cmd.none
+            { model with LoginDetails = None }, Cmd.none
         else
             printfn "%A" result
             model, Cmd.none
@@ -324,24 +342,24 @@ let view model dispatch =
     let baseView =
         View()
             .LoginoutButtonLink(
-                if model.AccountDetails.IsSome then
+                if model.LoginDetails.IsSome then
                     null
                 else
                     router.Link Page.Login
             )
             .LoginoutButtonText(
-                if model.AccountDetails.IsSome then
+                if model.LoginDetails.IsSome then
                     "Logout"
                 else
                     "Login"
             )
             .LoginoutButtonClicked((fun _ ->
-                if model.AccountDetails.IsSome then
+                if model.LoginDetails.IsSome then
                     dispatch Logout
                 )
             )
             .HelloText(
-                match model.AccountDetails with
+                match model.LoginDetails with
                 | Some details ->
                     p [ attr.``class`` "navbar-item is-size-5" ] [
                         text $"Hello, {details.Username}"
