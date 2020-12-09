@@ -97,6 +97,17 @@ let mustBeLocal: HttpHandler =
 let isSignedIn (ctx: HttpContext) =
     (isNull >> not) ctx.User && ctx.User.Identity.IsAuthenticated
 
+let setJwtRefreshTokenCookie (ctx: HttpContext) token =
+    ctx.Response.Cookies.Append(
+        "JwtRefreshToken",
+        token.RefreshToken.TokenString,
+        CookieOptions(
+            HttpOnly = true,
+            Secure = true,
+            Expires = DateTimeOffset(token.RefreshToken.ExpireAt)
+        )
+    )
+
 let loginHandler: HttpHandler =
     fun next ctx -> task {
         if isSignedIn ctx then
@@ -109,6 +120,7 @@ let loginHandler: HttpHandler =
             if result.Succeeded then
                 let jwtAuthManager = ctx.GetService<JwtAuthManager>()
                 let token = jwtAuthManager.GenerateTokens user.UserName [| Claim(ClaimTypes.Name, user.UserName) |] DateTime.Now
+                setJwtRefreshTokenCookie ctx token
                 return! json { Success = true; Details = Some { Username = user.UserName; Jwt = token }; Message = None } next ctx
             else
                 return! jnotauthorized { Success = false; Details = None; Message = Some "Sign in failed." } next ctx
@@ -120,6 +132,8 @@ let logoutHandler: HttpHandler =
             return! jmessage "success" next ctx
         else
         let jwtAuthManager = ctx.GetService<JwtAuthManager>()
+
+        ctx.Response.Cookies.Delete("JwtRefreshToken")
 
         ctx.User.Identity.Name
         |> jwtAuthManager.Logout
@@ -162,13 +176,13 @@ let accountDetails: HttpHandler =
 let refreshTokenHandler :HttpHandler =
     fun next ctx -> task {
         try
-            match ctx.TryGetRequestHeader HeaderNames.Authorization with
-            | Some bearer when bearer.StartsWith("Bearer ") ->
+            match ctx.TryGetRequestHeader HeaderNames.Authorization, ctx.GetCookieValue "JwtRefreshToken" with
+            | Some bearer, Some refreshToken when bearer.StartsWith("Bearer ") ->
                 let token = bearer.["Bearer ".Length..]
-                let! refreshToken = ctx.BindJsonAsync<{| RefreshToken: string |}>()
                 let jwtAuthManager = ctx.GetService<JwtAuthManager>()
-                match jwtAuthManager.Refresh refreshToken.RefreshToken token DateTime.Now with
+                match jwtAuthManager.Refresh refreshToken token DateTime.Now with
                 | Some refreshed ->
+                    setJwtRefreshTokenCookie ctx refreshed
                     return! json { Success = true; Details = Some { Username = ctx.User.Identity.Name; Jwt = refreshed }; Message = None } next ctx
                 | None ->
                     return! RequestErrors.unauthorized "JWT" "DogPark" (error "Refresh token was either expired or otherwise invalid") next ctx
