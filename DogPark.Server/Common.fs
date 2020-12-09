@@ -20,10 +20,8 @@ let articleRoot     = Path.Combine(webRoot, "articles")
 let markdownPipeline = MarkdownPipelineBuilder().DisableHtml().Build()
 let rand = Random()
 
-let generateKeypair publicKeyPath privateKeyPath =
+let generateKeypair() =
     use rsa = RSA.Create(2048)
     let publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey())
     let privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey())
-
-    File.WriteAllText(publicKeyPath, publicKey)
-    File.WriteAllText(privateKeyPath, privateKey)
+    publicKey, privateKey
