@@ -188,7 +188,7 @@ let refreshTokenHandler :HttpHandler =
                 | None ->
                     return! RequestErrors.unauthorized "JWT" "DogPark" (error "Refresh token was either expired or otherwise invalid") next ctx
             | _ ->
-                return! RequestErrors.unauthorized "JWT" "DogPark" (error "Invalid authorization header") next ctx
+                return! RequestErrors.unauthorized "JWT" "DogPark" (error "Invalid authorization header or JwtRefreshToken cookie") next ctx
         with
         | :? JsonException ->
             return! RequestErrors.unauthorized "JWT" "DogPark" (error "Refresh token missing or malformed") next ctx
