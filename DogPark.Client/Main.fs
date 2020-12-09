@@ -170,7 +170,6 @@ let update message model =
         | None ->
             model, Cmd.none
     | LoginResult result ->
-        printfn "%A" result
         match result.Details with
         | Some details ->
             let decoded = jwtDecodeNoVerify details.Jwt.AccessToken
