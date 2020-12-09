@@ -44,7 +44,7 @@ open System.Text.Json
 
 let error (msg: string) = json { Success = false; Message = msg }
 let jmessage (msg: string) = json { Success = true; Message = msg }
-let jnotauthorized o = RequestErrors.unauthorized "Identity" "DogPark" (json o)
+let jnotauthorized o = RequestErrors.unauthorized "JWT" "DogPark" (json o)
 
 let handleArticle (idArticle: uint32): HttpHandler =
     fun next ctx -> task {
@@ -130,7 +130,7 @@ let logoutHandler: HttpHandler =
 
 let mustBeLoggedIn: HttpHandler =
     error "You must be logged in."
-    |> RequestErrors.unauthorized "Identity" "DogPark"
+    |> RequestErrors.unauthorized "JWT" "DogPark"
 
 let changePassword: HttpHandler =
     fun next ctx -> task {
@@ -171,12 +171,12 @@ let refreshTokenHandler :HttpHandler =
                 | Some refreshed ->
                     return! json { Success = true; Details = Some { Username = ctx.User.Identity.Name; Jwt = refreshed }; Message = None } next ctx
                 | None ->
-                    return! RequestErrors.badRequest (error "Refresh token was either expired or otherwise invalid") next ctx
+                    return! RequestErrors.unauthorized "JWT" "DogPark" (error "Refresh token was either expired or otherwise invalid") next ctx
             | _ ->
-                return! RequestErrors.badRequest (error "Invalid authorization header") next ctx
+                return! RequestErrors.unauthorized "JWT" "DogPark" (error "Invalid authorization header") next ctx
         with
         | :? JsonException ->
-            return! RequestErrors.badRequest (error "Refresh token missing or malformed") next ctx
+            return! RequestErrors.unauthorized "JWT" "DogPark" (error "Refresh token missing or malformed") next ctx
     }
 
 let begoneBot =
