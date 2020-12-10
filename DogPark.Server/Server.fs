@@ -184,7 +184,9 @@ let refreshTokenHandler :HttpHandler =
                 match jwtAuthManager.Refresh refreshToken token DateTime.Now with
                 | Some refreshed ->
                     setJwtRefreshTokenCookie ctx refreshed
-                    return! json { Success = true; Details = Some { Username = ctx.User.Identity.Name; Jwt = refreshed }; Message = None } next ctx
+                    let decoded = jwtDecodeNoVerify refreshed.AccessToken
+                    let nameClaim = decoded.Claims |> Seq.find (fun c -> c.Type = ClaimTypes.Name)
+                    return! json { Success = true; Details = Some { Username = nameClaim.Value; Jwt = refreshed }; Message = None } next ctx
                 | None ->
                     return! RequestErrors.unauthorized "JWT" "DogPark" (error "Refresh token was either expired or otherwise invalid") next ctx
             | _ ->
