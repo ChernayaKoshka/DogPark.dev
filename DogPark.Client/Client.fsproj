@@ -6,6 +6,10 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="Views/ArticlesList.fs" />
+    <Compile Include="Views/Article.fs" />
+    <Compile Include="Views/Login.fs" />
     <Compile Include="Main.fs" />
     <Compile Include="Startup.fs" />
   </ItemGroup>
