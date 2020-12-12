@@ -157,7 +157,10 @@ let update message model =
     | Logout ->
         model,
         Cmd.OfTask.either
-            model.Api.Logout
+            (fun () -> task {
+                do! model.LocalStorage.RemoveItemAsync("JWT")
+                return! model.Api.Logout()
+            })
             ()
             LogoutResult
             setError
