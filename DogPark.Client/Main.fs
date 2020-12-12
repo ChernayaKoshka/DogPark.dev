@@ -17,7 +17,7 @@ open Blazored.LocalStorage
 open DogPark.Client.Views
 
 type Page =
-    | Home
+    | [<EndPoint("/")>] Home
     | Article of id: uint32
     | Articles
     | Login
