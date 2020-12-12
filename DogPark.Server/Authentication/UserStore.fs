@@ -85,4 +85,4 @@ type MariaDBStore(queries: Queries) =
             queries.UserIsInRole(user, normalizedRoleName, cancellationToken)
 
         member this.RemoveFromRoleAsync(user: User, normalizedRoleName: string, cancellationToken: CancellationToken): Task =
-            queries.UserRemoveFromeRole(user, normalizedRoleName, cancellationToken) :> Task
+            queries.UserRemoveFromRole(user, normalizedRoleName, cancellationToken) :> Task

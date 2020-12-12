@@ -279,12 +279,12 @@ type Queries(connectionString) =
                 {| RoleName = normalizedRoleName |})
     }
 
-    member __.UserRemoveFromeRole(user: User, normalizedRoleName: string, ?cancellationToken: CancellationToken) = task {
+    member __.UserRemoveFromRole(user: User, normalizedRoleName: string, ?cancellationToken: CancellationToken) = task {
         let cancellationToken = Option.defaultValue CancellationToken.None cancellationToken
         cancellationToken.ThrowIfCancellationRequested()
         use! connection = makeOpenConnection()
         let! _ =
-            connection.QuerySingleAsync<bool>(
+            connection.ExecuteAsync(
                 """
                 DELETE ur FROM userrole ur
                 INNER JOIN role r ON r.IDRole = ur.IDRole
