@@ -247,7 +247,16 @@ let webApp =
                 RequestErrors.notFound (error "No such API")
             ]
         )
-        GET >=> htmlFile (Path.Combine(webRoot, "index.html"))
+
+        choose [ GET; HEAD ]
+        >=> choose [
+            route "/"
+            route "/Login"
+            route "/Articles"
+            routex @"/Article/\d+"
+        ]
+        >=> htmlFile (Path.Combine(webRoot, "index.html"))
+
         setStatusCode 404 >=> text "Not Found"
     ]
 
