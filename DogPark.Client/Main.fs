@@ -176,6 +176,7 @@ let update message model =
         model,
         Cmd.OfTask.either
             (fun () -> task {
+                model.ApiClient.DefaultRequestHeaders.Authorization <- null
                 do! model.LocalStorage.RemoveItemAsync("JWT")
                 return! model.Api.Logout()
             })
@@ -186,7 +187,7 @@ let update message model =
         if result.Success then
             { model with Username = None }, Cmd.none
         else
-            model, Cmd.ofMsg (setError result)
+            model, Cmd.ofMsg (setError result.Message)
 
     | SetError err ->
         { model with
