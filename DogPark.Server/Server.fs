@@ -97,6 +97,8 @@ let mustBeLocal: HttpHandler =
 let isSignedIn (ctx: HttpContext) =
     (isNull >> not) ctx.User && ctx.User.Identity.IsAuthenticated
 
+let jwtRefreshTokenCookiePath = "/api/v1/account/"
+
 let setJwtRefreshTokenCookie (ctx: HttpContext) token =
     ctx.Response.Cookies.Append(
         "JwtRefreshToken",
@@ -105,7 +107,7 @@ let setJwtRefreshTokenCookie (ctx: HttpContext) token =
             HttpOnly = true,
             Secure = true,
             Expires = DateTimeOffset(token.RefreshToken.ExpireAt),
-            Path = "/api/v1/account/refreshToken"
+            Path = jwtRefreshTokenCookiePath
         )
     )
 
@@ -134,7 +136,7 @@ let logoutHandler: HttpHandler =
         else
         let jwtAuthManager = ctx.GetService<JwtAuthManager>()
 
-        ctx.Response.Cookies.Delete("JwtRefreshToken")
+        ctx.Response.Cookies.Delete("JwtRefreshToken", CookieOptions(Path = jwtRefreshTokenCookiePath))
 
         ctx.User.Identity.Name
         |> jwtAuthManager.Logout
