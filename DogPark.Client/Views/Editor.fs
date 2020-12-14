@@ -71,7 +71,6 @@ let update model message =
             },
             Cmd.OfTask.perform
                 (fun () -> task {
-                    // do! Task.Delay(TimeSpan.FromSeconds(0.5))
                     do! model.JSRuntime.InvokeVoidAsync("highlight")
                     return EndHighlight
                 })

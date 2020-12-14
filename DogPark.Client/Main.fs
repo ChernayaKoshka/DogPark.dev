@@ -108,29 +108,36 @@ let initModel (clientFactory: IHttpClientFactory) (localStorage: ILocalStorageSe
         id
         setError
 
+let subMsg msg =
+    Cmd.map msg >> Cmd.map SubmodelMsg
+
 let update message model =
     match message with
     | SetPage page ->
-        let submodel, nextCmd =
+        let page, submodel, nextCmd =
             match page with
             | Page.Home ->
-                Submodel.Home, Cmd.none
+                page, Submodel.Home, Cmd.none
             | Page.Article id ->
                 let submodel, nextCmd = Article.init model.Api id
-                Submodel.Article submodel, Cmd.map ArticleMsg nextCmd
+                page, Submodel.Article submodel, subMsg ArticleMsg nextCmd
             | Page.Articles ->
                 let submodel, nextCmd = ArticlesList.init model.Api
-                Submodel.ArticlesList submodel, Cmd.map ArticlesListMsg nextCmd
+                page, Submodel.ArticlesList submodel, subMsg ArticlesListMsg nextCmd
             | Page.Login ->
                 let submodel, nextCmd = Login.init model.Api
-                Submodel.Login submodel, Cmd.map LoginMsg nextCmd
+                page, Submodel.Login submodel, subMsg LoginMsg nextCmd
             | Page.Editor ->
-                let submodel, nextCmd = Editor.init model.JSRuntime
-                Submodel.Editor submodel, Cmd.map EditorMsg nextCmd
+                match model.Username with
+                | Some _ ->
+                    let submodel, nextCmd = Editor.init model.JSRuntime
+                    page, Submodel.Editor submodel, subMsg EditorMsg nextCmd
+                | None ->
+                    Page.Home, Submodel.Home, Cmd.ofMsg (setError "You are not authorized to view that page.")
         { model with
             Page = page
             Submodel = submodel
-        }, Cmd.map SubmodelMsg nextCmd
+        }, nextCmd
 
     | LoginResult result ->
         match result.Details with
@@ -188,24 +195,22 @@ let update message model =
         model, Cmd.none
 
     | SubmodelMsg msg ->
-        let mapMsg msg =
-            Cmd.map msg >> Cmd.map SubmodelMsg
         let next, nextCmd =
             match msg, model.Submodel with
             | ArticleMsg msg, Submodel.Article articleModel ->
                 let next, nextCmd = Article.update articleModel msg
-                Submodel.Article next, mapMsg ArticleMsg nextCmd
+                Submodel.Article next, subMsg ArticleMsg nextCmd
             | ArticlesListMsg msg, Submodel.ArticlesList articlesListModel ->
                 let next, nextCmd = ArticlesList.update articlesListModel msg
-                Submodel.ArticlesList next, mapMsg ArticlesListMsg nextCmd
+                Submodel.ArticlesList next, subMsg ArticlesListMsg nextCmd
             | LoginMsg (Login.LoginResult result), Submodel.Login loginModel ->
                 Submodel.Login loginModel, Cmd.ofMsg (LoginResult result)
             | LoginMsg msg, Submodel.Login loginModel ->
                 let next, nextCmd = Login.update loginModel msg
-                Submodel.Login next, mapMsg LoginMsg nextCmd
+                Submodel.Login next, subMsg LoginMsg nextCmd
             | EditorMsg msg, Submodel.Editor editorModel ->
                 let next, nextCmd = Editor.update editorModel msg
-                Submodel.Editor next, mapMsg EditorMsg nextCmd
+                Submodel.Editor next, subMsg EditorMsg nextCmd
             | msg, model ->
                 failwithf "Somehow '%A' and '%A' ended up together! Or you forgot to add a new sobmodel" msg model
         { model with
@@ -223,33 +228,51 @@ let homeView (baseView: View) model dispatch =
         .Scripts(Empty)
         .Elt()
 
+let startNav dispatch username =
+    concat [
+        NavLink().Text("Articles").Link(router.Link Page.Articles).Elt()
+        NavLink().Text("GitHub").Link("https://github.com/ChernayaKoshka/").Elt()
+        match username with
+        | Some _ ->
+            NavLink().Text("Article Editor").Link(router.Link Page.Editor).Elt()
+        | _ ->
+            ()
+    ]
+
+let endNav dispatch username =
+    match username with
+    | Some username ->
+        concat [
+            p [ attr.``class`` "navbar-item is-size-5" ] [
+                text $"Hello, {username}"
+            ]
+            NavButton()
+                .Class("is-light")
+                .Text("Logout")
+                .Clicked(fun _ -> dispatch Logout)
+                .Elt()
+        ]
+    | None ->
+        NavButton()
+            .Class("is-primary")
+            .Text("Login")
+            .Link(router.Link Page.Login)
+            .Elt()
+
 let view model dispatch =
     let baseView =
         View()
-            .LoginoutButtonLink(
-                if model.Username.IsSome then
-                    null
-                else
-                    router.Link Page.Login
-            )
-            .LoginoutButtonText(
-                if model.Username.IsSome then
-                    "Logout"
-                else
-                    "Login"
-            )
-            .LoginoutButtonClicked((fun _ ->
-                if model.Username.IsSome then
-                    dispatch Logout
-                )
-            )
-            .HelloText(
-                match model.Username with
-                | Some username ->
-                    p [ attr.``class`` "navbar-item is-size-5" ] [
-                        text $"Hello, {username}"
-                    ]
-                | None -> Empty
+            .StartNav(startNav dispatch model.Username)
+            .EndNav(endNav dispatch model.Username)
+            .TopLevel(
+                cond model.ErrorMessage <| function
+                | Some err ->
+                    ErrorNotification()
+                        .Clicked(fun _ -> dispatch (SetError None))
+                        .Content(text err)
+                        .Elt()
+                | _ ->
+                    empty
             )
 
     match (model.Page, model.Submodel) with
