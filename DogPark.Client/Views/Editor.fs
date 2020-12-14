@@ -12,12 +12,18 @@ open System.Threading.Tasks
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open System
 
+type HighlightState =
+    | Available
+    | Pending
+    | Highlighting
+
 type Model =
     {
         JSRuntime: IJSRuntime
         Title: string
         Content: string
-        HighlightPending: bool
+        LastContentUpdate: DateTime ref
+        HighlightState: HighlightState
     }
 
 type Msg =
@@ -31,7 +37,8 @@ let init jsRuntime =
         JSRuntime = jsRuntime
         Title = ""
         Content = ""
-        HighlightPending = false
+        LastContentUpdate = ref DateTime.Now
+        HighlightState = Available
     }, Cmd.none
 
 let update model message =
@@ -41,19 +48,31 @@ let update model message =
             Title = title
         }, Cmd.none
     | SetContent content ->
+        let now = DateTime.Now
+        model.LastContentUpdate := now
         { model with
             Content = content
+            HighlightState = if model.HighlightState = Available then Pending else model.HighlightState
         },
-        if not model.HighlightPending then Cmd.ofMsg BeginHighlight
-        else Cmd.none
+        if model.HighlightState = Available then
+            Cmd.OfTask.perform
+                (fun () -> task {
+                    while DateTime.Now - !model.LastContentUpdate <= TimeSpan.FromSeconds(0.5) do
+                        do! Task.Delay(TimeSpan.FromSeconds(0.25))
+                    return BeginHighlight
+                })
+                ()
+                id
+        else
+            Cmd.none
     | BeginHighlight ->
-        if not model.HighlightPending then
+        if model.HighlightState = Pending then
             { model with
-                HighlightPending = true
+                HighlightState = Highlighting
             },
             Cmd.OfTask.perform
                 (fun () -> task {
-                    do! Task.Delay(TimeSpan.FromSeconds(0.5))
+                    // do! Task.Delay(TimeSpan.FromSeconds(0.5))
                     do! model.JSRuntime.InvokeVoidAsync("highlight")
                     return EndHighlight
                 })
@@ -63,7 +82,7 @@ let update model message =
             model, Cmd.none
     | EndHighlight ->
         { model with
-            HighlightPending = false
+            HighlightState = Available
         }, Cmd.none
 
 type EditorView = Template<"./wwwroot/templates/editor.html">
