@@ -34,26 +34,15 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <a class="navbar-item is-size-5" href="Articles">
-          Articles
-        </a>
-        <a class="navbar-item is-size-5" href="https://github.com/ChernayaKoshka/">
-          GitHub
-        </a>
+        ${StartNav}
       </div>
       <div class="navbar-end">
-        ${HelloText}
-        <div class="navbar-item">
-          <div class="buttons">
-            <a class="button is-light" onclick="${LoginoutButtonClicked}" href="${LoginoutButtonLink}">
-              ${LoginoutButtonText}
-            </a>
-          </div>
-        </div>
+        ${EndNav}
       </div>
     </div>
   </nav>
-  <div class="container">
+  ${TopLevel}
+  <div class="container is-fluid">
     ${Content}
   </div>
   ${Scripts}
