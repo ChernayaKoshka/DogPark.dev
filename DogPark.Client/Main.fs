@@ -161,7 +161,9 @@ let update message model =
             ]
         | None ->
             printfn "error logging in"
-            { model with Username = None }, Cmd.none
+            { model with
+                Username = None
+            }, Cmd.ofMsg (setError "Error logging in")
     | BeginRefreshToken ->
         model,
         Cmd.OfTask.either
