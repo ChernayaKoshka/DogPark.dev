@@ -116,17 +116,23 @@ let loginHandler: HttpHandler =
         if isSignedIn ctx then
             return! jmessage "success" next ctx
         else
-            let! model = ctx.BindJsonAsync<LoginModel>()
-            let signInManager = ctx.GetService<SignInManager<User>>()
-            let! user = signInManager.UserManager.FindByNameAsync(model.Username)
-            let! result = signInManager.CheckPasswordSignInAsync(user, model.Password, false)
-            if result.Succeeded then
-                let jwtAuthManager = ctx.GetService<JwtAuthManager>()
-                let token = jwtAuthManager.GenerateTokens user.UserName [| Claim(ClaimTypes.Name, user.UserName) |] DateTime.Now
-                setJwtRefreshTokenCookie ctx token
-                return! json { Success = true; Details = Some { Username = user.UserName; Jwt = token }; Message = None } next ctx
-            else
-                return! jnotauthorized { Success = false; Details = None; Message = Some "Sign in failed." } next ctx
+
+        let! model = ctx.BindJsonAsync<LoginModel>()
+        let signInManager = ctx.GetService<SignInManager<User>>()
+        let! user = signInManager.UserManager.FindByNameAsync(model.Username)
+        if isNull user then
+            return! jnotauthorized { Success = false; Details = None; Message = Some "Sign in failed." } next ctx
+        else
+
+        let! result = signInManager.CheckPasswordSignInAsync(user, model.Password, false)
+        if result.Succeeded then
+            let jwtAuthManager = ctx.GetService<JwtAuthManager>()
+            let token = jwtAuthManager.GenerateTokens user.UserName [| Claim(ClaimTypes.Name, user.UserName) |] DateTime.Now
+            setJwtRefreshTokenCookie ctx token
+            return! json { Success = true; Details = Some { Username = user.UserName; Jwt = token }; Message = None } next ctx
+        else
+
+        return! jnotauthorized { Success = false; Details = None; Message = Some "Sign in failed." } next ctx
     }
 
 let logoutHandler: HttpHandler =
