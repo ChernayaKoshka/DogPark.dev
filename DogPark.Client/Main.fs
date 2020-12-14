@@ -15,6 +15,7 @@ open FSharp.Control.Tasks.V2.ContextInsensitive
 open System.Net.Http.Headers
 open Blazored.LocalStorage
 open DogPark.Client.Views
+open Microsoft.JSInterop
 
 type Page =
     | [<EndPoint("/")>] Home
@@ -64,6 +65,7 @@ type Model =
         ApiClient: HttpClient
         ClientFactory: IHttpClientFactory
         LocalStorage: ILocalStorageService
+        JSRuntime: IJSRuntime
 
         Username: string option
         ErrorMessage: string option
@@ -71,7 +73,7 @@ type Model =
 
 let router = Router.infer SetPage (fun m -> m.Page)
 
-let initModel (clientFactory: IHttpClientFactory) (localStorage: ILocalStorageService) =
+let initModel (clientFactory: IHttpClientFactory) (localStorage: ILocalStorageService) (jsRuntime: IJSRuntime) =
     let client = clientFactory.CreateClient(BaseAddress = Api.BaseUri)
 
     let api =
@@ -87,6 +89,7 @@ let initModel (clientFactory: IHttpClientFactory) (localStorage: ILocalStorageSe
         ApiClient = client
         ClientFactory = clientFactory
         LocalStorage = localStorage
+        JSRuntime = jsRuntime
 
         Username = None
         ErrorMessage = None
@@ -122,7 +125,7 @@ let update message model =
                 let submodel, nextCmd = Login.init model.Api
                 Submodel.Login submodel, Cmd.map LoginMsg nextCmd
             | Page.Editor ->
-                let submodel, nextCmd = Editor.init()
+                let submodel, nextCmd = Editor.init model.JSRuntime
                 Submodel.Editor submodel, Cmd.map EditorMsg nextCmd
         { model with
             Page = page
@@ -269,7 +272,7 @@ type MyApp() =
     override this.Program =
         let hcf = this.Services.GetService<IHttpClientFactory>()
         let localStorage = this.Services.GetService<ILocalStorageService>()
-        Program.mkProgram (fun _ -> initModel hcf localStorage) update view
+        Program.mkProgram (fun _ -> initModel hcf localStorage this.JSRuntime) update view
         #if DEBUG
         |> Program.withConsoleTrace
         #endif
