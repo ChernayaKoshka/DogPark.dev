@@ -160,9 +160,10 @@ let update message model =
                     setError
             ]
         | None ->
+            let message = Option.defaultValue "Sign in failed." result.Message
             { model with
                 Username = None
-            }, Cmd.ofMsg (setError result.Message)
+            }, Cmd.ofMsg (setError message)
     | BeginRefreshToken ->
         model,
         Cmd.OfTask.either
