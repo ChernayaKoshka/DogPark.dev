@@ -21,17 +21,20 @@ type Page =
     | Article of id: uint32
     | Articles
     | Login
+    | Editor
 
 type Submodel =
     | Home
     | Login of Login.Model
     | ArticlesList of ArticlesList.Model
     | Article of Article.Model
+    | Editor of Editor.Model
 
 type SubmodelMsg =
     | LoginMsg of Login.Msg
     | ArticleMsg of Article.Msg
     | ArticlesListMsg of ArticlesList.Msg
+    | EditorMsg of Editor.Msg
 
 type Message =
     | SetPage of Page
@@ -118,6 +121,9 @@ let update message model =
             | Page.Login ->
                 let submodel, nextCmd = Login.init model.Api
                 Submodel.Login submodel, Cmd.map LoginMsg nextCmd
+            | Page.Editor ->
+                let submodel, nextCmd = Editor.init()
+                Submodel.Editor submodel, Cmd.map EditorMsg nextCmd
         { model with
             Page = page
             Submodel = submodel
@@ -194,6 +200,9 @@ let update message model =
             | LoginMsg msg, Submodel.Login loginModel ->
                 let next, nextCmd = Login.update loginModel msg
                 Submodel.Login next, mapMsg LoginMsg nextCmd
+            | EditorMsg msg, Submodel.Editor editorModel ->
+                let next, nextCmd = Editor.update editorModel msg
+                Submodel.Editor next, mapMsg EditorMsg nextCmd
             | msg, model ->
                 failwithf "Somehow '%A' and '%A' ended up together! Or you forgot to add a new sobmodel" msg model
         { model with
@@ -249,6 +258,8 @@ let view model dispatch =
         ArticlesList.view baseView model (ArticlesListMsg >> SubmodelMsg >> dispatch)
     | Page.Login, Submodel.Login model ->
         Login.view baseView model (LoginMsg >> SubmodelMsg >> dispatch)
+    | Page.Editor, Submodel.Editor model ->
+        Editor.view baseView model (EditorMsg >> SubmodelMsg >> dispatch)
     | page, model ->
         failwithf "'%A' and '%A' are not compatible or are not handled." page model
 

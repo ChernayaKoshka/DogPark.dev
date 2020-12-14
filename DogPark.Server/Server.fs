@@ -253,6 +253,7 @@ let webApp =
             route "/"
             route "/Login"
             route "/Articles"
+            route "/Editor"
             routex @"/Article/\d+"
         ]
         >=> htmlFile (Path.Combine(webRoot, "index.html"))
