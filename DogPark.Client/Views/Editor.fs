@@ -48,8 +48,7 @@ let update model message =
             Title = title
         }, Cmd.none
     | SetContent content ->
-        let now = DateTime.Now
-        model.LastContentUpdate := now
+        model.LastContentUpdate := DateTime.Now
         { model with
             Content = content
             HighlightState = if model.HighlightState = Available then Pending else model.HighlightState
