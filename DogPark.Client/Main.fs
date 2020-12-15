@@ -185,7 +185,7 @@ let update message model =
             setError
     | LogoutResult result ->
         if result.Success then
-            { model with Username = None }, Cmd.none
+            { model with Username = None }, Cmd.ofMsg (SetPage Page.Home)
         else
             model, Cmd.ofMsg (setError result.Message)
 
