@@ -68,11 +68,11 @@ type Queries(connectionString) =
         cancellationToken.ThrowIfCancellationRequested()
         use! connection = makeOpenConnection()
         return!
-            connection.QuerySingleAsync<int>(
+            connection.QuerySingleAsync<uint32>(
                 """
                 INSERT INTO role (Name, NormalizedName)
                 VALUES (@Name, @NormalizedName);
-                SELECT CAST(last_insert_id() as int)
+                SELECT CAST(last_insert_id() AS UNSIGNED INT)
                 """,
                 role
         )
@@ -146,11 +146,11 @@ type Queries(connectionString) =
         cancellationToken.ThrowIfCancellationRequested()
         use! connection = makeOpenConnection()
         return!
-            connection.QuerySingleAsync<int>(
+            connection.QuerySingleAsync<uint32>(
                 """
                 INSERT INTO user (UserName, NormalizedUserName, PasswordHash)
                 VALUES (@UserName, @NormalizedUserName, @PasswordHash);
-                SELECT CAST(last_insert_id() as int)
+                SELECT CAST(last_insert_id() AS UNSIGNED INT)
                 """,
                 user
             )
