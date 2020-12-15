@@ -85,3 +85,38 @@ type LoginResponse =
         Details: LoginDetails option
         Message: string option
     }
+
+[<CLIMutable>]
+type PostArticle =
+    {
+        Headline: string
+        Content: string
+    }
+    with
+        member this.HasErrors() =
+            let errors =
+                [
+                    if String.IsNullOrWhiteSpace(this.Headline) then
+                        "Headline must not be null or whitespace."
+                    else
+                        if this.Headline.Length > 255 then "Headline cannot be longer than 50 characters"
+                        if this.Headline.Length < 10 then "Headline must be at least 10 characters"
+
+                    if String.IsNullOrWhiteSpace(this.Content) then
+                        "Content must not be null or whitespace."
+                    else
+                        if this.Content.Length > 16000 then "Content must be fewer than 16000 bytes"
+                        if this.Content.Length < 256 then "Content must be greater than 256 bytes"
+                ]
+            if errors.Length <> 0 then
+                Some errors
+            else
+                None
+
+
+type PostArticleResponse =
+    {
+        Success: bool
+        Id: uint32
+        Message: string option
+    }
