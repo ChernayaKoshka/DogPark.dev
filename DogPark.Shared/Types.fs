@@ -117,6 +117,6 @@ type PostArticle =
 type PostArticleResponse =
     {
         Success: bool
-        Id: uint32
+        Id: uint32 option
         Message: string option
     }
