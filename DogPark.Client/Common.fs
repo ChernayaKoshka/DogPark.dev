@@ -22,6 +22,9 @@ type Api =
         [<Path("article/{Id}")>]
         Article: {| Id: uint32 |} -> Task<Article>
 
+        [<Path("article")>]
+        PostArticle: PostArticle -> Task<PostArticleResponse>
+
         [<Path("account/login")>]
         Login: LoginModel -> Task<LoginResponse>
 
