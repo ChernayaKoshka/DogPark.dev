@@ -182,7 +182,7 @@ let accountDetails: HttpHandler =
             return! mustBeLoggedIn next ctx
     }
 
-let refreshTokenHandler :HttpHandler =
+let refreshTokenHandler: HttpHandler =
     fun next ctx -> task {
         try
             match ctx.TryGetRequestHeader HeaderNames.Authorization, ctx.GetCookieValue "JwtRefreshToken" with
@@ -202,6 +202,25 @@ let refreshTokenHandler :HttpHandler =
         with
         | :? JsonException ->
             return! RequestErrors.unauthorized "JWT" "DogPark" (error "Refresh token missing or malformed") next ctx
+    }
+
+let postArticle: HttpHandler =
+    fun next ctx -> task {
+        let! model = ctx.BindJsonAsync<PostArticle>()
+
+        match model.HasErrors() with
+        | Some errors ->
+            return! error (String.concat "\n" errors) next ctx
+        | None ->
+            let userManager = ctx.GetService<UserManager<User>>()
+            let! user = userManager.FindByNameAsync(ctx.User.Identity.Name)
+            let filename = $"""{sanitizeFilename (model.Headline.Trim())}-{Guid.NewGuid().ToString("N")}.md"""
+            let path = Path.Combine(articleRoot, filename)
+            do! File.WriteAllTextAsync(path, model.Content.Trim())
+
+            let queries = ctx.GetService<Queries>()
+            let! idArticle = queries.InsertArticle user.IDUser (model.Headline.Trim()) path
+            return! json { Success = true; Id = idArticle; Message = None } next ctx
     }
 
 let begoneBot =
@@ -241,6 +260,7 @@ let webApp =
                         ]
                         POST >=> choose [
                             route "/seed" >=> mustBeLocal >=> seed
+                            route "/article" >=> requiresAuthentication mustBeLoggedIn >=> postArticle
                             subRoute "/account" (
                                 choose [
                                     route "/login" >=> loginHandler
