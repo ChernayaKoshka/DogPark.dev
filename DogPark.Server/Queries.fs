@@ -17,6 +17,19 @@ type Queries(connectionString) =
         return connection
     }
 
+    member __.InsertArticle (idUser: uint32) (headline: string) (filePath: string) = task {
+        use! connection = makeOpenConnection()
+        return!
+            connection.QuerySingleAsync<uint32>(
+                """
+                INSERT INTO article (IDUser, Headline, FilePath)
+                VALUES (@IDuser, @Headline, @FilePath);
+                SELECT CAST(last_insert_id() AS UNSIGNED INT)
+                """,
+                {| IDUser = idUser; Headline = headline; FilePath = filePath |}
+            )
+    }
+
     member __.GetAllArticleDetails() = task {
         use! connection = makeOpenConnection()
         return!
