@@ -20,8 +20,7 @@ type HighlightState =
 type Model =
     {
         JSRuntime: IJSRuntime
-        Title: string
-        Content: string
+        Article: PostArticle
         LastContentUpdate: DateTime ref
         HighlightState: HighlightState
     }
@@ -35,22 +34,27 @@ type Msg =
 let init jsRuntime =
     {
         JSRuntime = jsRuntime
-        Title = ""
-        Content = ""
+        Article = { Headline = String.Empty; Content = String.Empty }
         LastContentUpdate = ref DateTime.Now
         HighlightState = Available
     }, Cmd.none
 
-let update model message =
+let update (model: Model) message =
     match message with
     | SetTitle title ->
         { model with
-            Title = title
+            Article =
+                { model.Article with
+                    Headline = title
+                }
         }, Cmd.none
     | SetContent content ->
         model.LastContentUpdate := DateTime.Now
         { model with
-            Content = content
+            Article =
+                { model.Article with
+                    Content = content
+                }
             HighlightState = if model.HighlightState = Available then Pending else model.HighlightState
         },
         if model.HighlightState = Available then
@@ -84,16 +88,25 @@ let update model message =
         }, Cmd.none
 
 type EditorView = Template<"./wwwroot/templates/editor.html">
-let view (baseView: View) model dispatch =
+let view (baseView: View) (model: Model) dispatch =
     baseView
         .Head(link [ attr.rel "stylesheet"; attr.href "css/vs.css" ])
         .Content(
             EditorView()
                 // fsharplint:disable CanBeReplacedWithComposition
-                .Title(model.Title, fun title -> dispatch (SetTitle title))
-                .Content(model.Content, fun content -> dispatch (SetContent content))
+                .Title(model.Article.Headline, fun title -> dispatch (SetTitle title))
+                .Content(model.Article.Content, fun content -> dispatch (SetContent content))
+                .Errors(
+                    match model.Article.HasErrors() with
+                    | Some errors ->
+                        ErrorNotificationNoButton()
+                            .Content(errors |> List.map (fun t -> p [ ] [ text t ]) |> concat)
+                            .Elt()
+                    | None ->
+                        empty
+                )
                 .Preview(
-                    RawHtml (Markdig.Markdown.ToHtml(model.Content, markdownPipeline))
+                    RawHtml (Markdig.Markdown.ToHtml(model.Article.Content, markdownPipeline))
                 )
                 .Elt()
         )
