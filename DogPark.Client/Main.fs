@@ -163,7 +163,16 @@ let update message model =
             let message = Option.defaultValue "Sign in failed." result.Message
             { model with
                 Username = None
-            }, Cmd.ofMsg (setError message)
+            }, Cmd.batch [
+                Cmd.ofMsg (setError message)
+                Cmd.OfTask.attempt
+                    (fun () -> task {
+                        model.ApiClient.DefaultRequestHeaders.Authorization <- null
+                        do! model.LocalStorage.RemoveItemAsync("JWT")
+                    })
+                    ()
+                    setError
+            ]
     | BeginRefreshToken ->
         model,
         Cmd.OfTask.either
