@@ -291,7 +291,7 @@ let webApp =
 
 let configureCors (builder : CorsPolicyBuilder) =
     builder
-        .WithOrigins("http://localhost:7777")
+        .WithOrigins("http://localhost:7777", "https://localhost:7777", "http://dogpark.dev", "https://dogpark.dev")
         .AllowAnyMethod()
         .AllowAnyHeader()
     |> ignore
