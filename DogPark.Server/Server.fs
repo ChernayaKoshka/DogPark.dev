@@ -113,10 +113,6 @@ let setJwtRefreshTokenCookie (ctx: HttpContext) token =
 
 let loginHandler: HttpHandler =
     fun next ctx -> task {
-        if isSignedIn ctx then
-            return! jmessage "success" next ctx
-        else
-
         let! model = ctx.BindJsonAsync<LoginModel>()
         let signInManager = ctx.GetService<SignInManager<User>>()
         let! user = signInManager.UserManager.FindByNameAsync(model.Username)
