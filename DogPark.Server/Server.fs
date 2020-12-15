@@ -215,7 +215,7 @@ let begoneBot =
 let webApp =
     choose [
         routeCix
-            """(?:\.sql|[pP][hH][pP][mM][yY][aA][dD][mM][iI][nN]|/+wp-login\.php|/\.git/HEAD|/\.env|/TP/public/index\.php|/admin/login\.php|/allstat\.php|/cfg/|/cisco/|/config.*/|/firmware/|/linksys/|/login\.cgi|/phone/|/polycom/|/provision.*/|/run\.py|/struts|/wls-wsat|/wp-config\.php|/wuwu11\.php|/wwwroot\.rar|/rpc/trackback/)"""
+            """(?:\.sql|\.[pP][hH][pP]|/+wp-login\.php|/\.git/HEAD|/\.env|/TP/public/index\.php|/admin/login\.php|/allstat\.php|/cfg/|/cisco/|/config.*/|/firmware/|/linksys/|/login\.cgi|/phone/|/polycom/|/provision.*/|/run\.py|/struts|/wls-wsat|/wp-config\.php|/wuwu11\.php|/wwwroot\.rar|/rpc/trackback/)"""
             >=> htmlString begoneBot
 
         subRoute "/api"(
