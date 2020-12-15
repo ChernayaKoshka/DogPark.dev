@@ -130,7 +130,7 @@ let update message model =
             | Page.Editor ->
                 match model.Username with
                 | Some _ ->
-                    let submodel, nextCmd = Editor.init model.JSRuntime
+                    let submodel, nextCmd = Editor.init model.Api model.JSRuntime
                     page, Submodel.Editor submodel, subMsg EditorMsg nextCmd
                 | None ->
                     Page.Home, Submodel.Home, Cmd.ofMsg (setError "You are not authorized to view that page.")
@@ -221,8 +221,14 @@ let update message model =
                 let next, nextCmd = Login.update loginModel msg
                 Submodel.Login next, subMsg LoginMsg nextCmd
             | EditorMsg msg, Submodel.Editor editorModel ->
-                let next, nextCmd = Editor.update editorModel msg
-                Submodel.Editor next, subMsg EditorMsg nextCmd
+                match msg with
+                | Editor.Msg.SetError err ->
+                    Submodel.Editor editorModel, Cmd.ofMsg (SetError err)
+                | Editor.Msg.SubmitResult result when result.Success ->
+                    Submodel.Editor editorModel, Cmd.ofMsg (SetPage (Page.Article result.Id.Value))
+                | msg ->
+                    let next, nextCmd = Editor.update editorModel msg
+                    Submodel.Editor next, subMsg EditorMsg nextCmd
             | msg, model ->
                 failwithf "Somehow '%A' and '%A' ended up together! Or you forgot to add a new sobmodel" msg model
         { model with

@@ -19,6 +19,7 @@ type HighlightState =
 
 type Model =
     {
+        Api: Api
         JSRuntime: IJSRuntime
         Article: PostArticle
         LastContentUpdate: DateTime ref
@@ -30,9 +31,19 @@ type Msg =
     | SetContent of string
     | BeginHighlight
     | EndHighlight
+    | Submit
+    | SubmitResult of PostArticleResponse
+    | SetError of string option
 
-let init jsRuntime =
+let setError (o: #obj) =
+    o
+    |> string
+    |> Some
+    |> SetError
+
+let init api jsRuntime =
     {
+        Api = api
         JSRuntime = jsRuntime
         Article = { Headline = String.Empty; Content = String.Empty }
         LastContentUpdate = ref DateTime.Now
@@ -86,9 +97,25 @@ let update (model: Model) message =
         { model with
             HighlightState = Available
         }, Cmd.none
+    | SetError _ ->
+        // should be consumed in main
+        model, Cmd.none
+    | Submit ->
+        model,
+        Cmd.OfTask.either
+            (fun article -> task {
+                return! model.Api.PostArticle article
+            })
+            model.Article
+            SubmitResult
+            setError
+    | SubmitResult _ ->
+        // should be consumed in main
+        model, Cmd.none
 
 type EditorView = Template<"./wwwroot/templates/editor.html">
 let view (baseView: View) (model: Model) dispatch =
+    let errors = model.Article.HasErrors()
     baseView
         .Head(link [ attr.rel "stylesheet"; attr.href "css/vs.css" ])
         .Content(
@@ -97,13 +124,28 @@ let view (baseView: View) (model: Model) dispatch =
                 .Title(model.Article.Headline, fun title -> dispatch (SetTitle title))
                 .Content(model.Article.Content, fun content -> dispatch (SetContent content))
                 .Errors(
-                    match model.Article.HasErrors() with
+                    match errors with
                     | Some errors ->
                         ErrorNotificationNoButton()
                             .Content(errors |> List.map (fun t -> p [ ] [ text t ]) |> concat)
                             .Elt()
                     | None ->
                         empty
+                )
+                .SubmitButton(
+                    div [ attr.``class`` "field" ] [
+                        div [ attr.``class`` "control" ] [
+                            button [
+                                attr.``class`` "button is-link is-pulled-right"
+                                if errors.IsSome then
+                                    attr.disabled "true"
+                                else
+                                    on.click (fun _ -> dispatch Submit)
+                            ] [
+                                text "Submit"
+                            ]
+                        ]
+                    ]
                 )
                 .Preview(
                     RawHtml (Markdig.Markdown.ToHtml(model.Article.Content, markdownPipeline))
