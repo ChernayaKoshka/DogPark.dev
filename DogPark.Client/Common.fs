@@ -65,3 +65,4 @@ type View = Template<"./wwwroot/templates/realIndex.html">
 type NavLink = Template<"./wwwroot/templates/navLink.html">
 type NavButton = Template<"./wwwroot/templates/navButton.html">
 type ErrorNotification = Template<"./wwwroot/templates/errorNotification.html">
+type ErrorNotificationNoButton = Template<"./wwwroot/templates/errorNotificationNoButton.html">
