@@ -215,8 +215,8 @@ let postArticle: HttpHandler =
             do! File.WriteAllTextAsync(path, model.Content.Trim())
 
             let queries = ctx.GetService<Queries>()
-            let! idArticle = queries.InsertArticle user.IDUser (model.Headline.Trim()) path
-            return! json { Success = true; Id = idArticle; Message = None } next ctx
+            let! idArticle = queries.InsertArticle user.IDUser (model.Headline.Trim()) filename
+            return! json { Success = true; Id = Some idArticle; Message = None } next ctx
     }
 
 let begoneBot =
