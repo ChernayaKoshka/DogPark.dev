@@ -18,6 +18,15 @@ let articleRoot     = Path.Combine(webRoot, "articles")
 
 let rand = Random()
 
+let sanitizeFilename (name: string) =
+    name
+    |> Seq.map (fun c ->
+        if Array.contains c (Path.GetInvalidFileNameChars()) then '-'
+        else c
+    )
+    |> Array.ofSeq
+    |> String
+
 let generateKeypair() =
     use rsa = RSA.Create(2048)
     let publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey())
