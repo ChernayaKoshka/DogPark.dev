@@ -39,6 +39,7 @@ type SubmodelMsg =
 
 type Message =
     | SetPage of Page
+    | ToggleBurger
 
     | LoginResult of LoginResponse
     | BeginRefreshToken
@@ -69,6 +70,7 @@ type Model =
 
         Username: string option
         ErrorMessage: string option
+        BurgerActive: bool
     }
 
 let router = Router.infer SetPage (fun m -> m.Page)
@@ -93,6 +95,7 @@ let initModel (clientFactory: IHttpClientFactory) (localStorage: ILocalStorageSe
 
         Username = None
         ErrorMessage = None
+        BurgerActive = false
     },
     Cmd.OfTask.either
         (fun _ -> task {
@@ -138,6 +141,10 @@ let update message model =
             Page = page
             Submodel = submodel
         }, nextCmd
+    | ToggleBurger ->
+        { model with
+            BurgerActive = not model.BurgerActive
+        }, Cmd.none
 
     | LoginResult result ->
         match result.Details with
@@ -282,6 +289,13 @@ let view model dispatch =
         View()
             .StartNav(startNav dispatch model.Username)
             .EndNav(endNav dispatch model.Username)
+            .BurgerClicked(fun _ -> dispatch ToggleBurger)
+            .IsActiveBurger(
+                if model.BurgerActive then
+                    "is-active"
+                else
+                    ""
+            )
             .TopLevel(
                 cond model.ErrorMessage <| function
                 | Some err ->

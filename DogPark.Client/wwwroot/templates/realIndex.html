@@ -31,8 +31,13 @@
       <a class="navbar-item has-text-weight-bold is-size-5" href="/">
         🐶 DogPark
       </a>
+      <a role="button" class="navbar-burger ${IsActiveBurger}" aria-label="menu" aria-expanded="false" onclick="${BurgerClicked}">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
     </div>
-    <div class="navbar-menu">
+    <div class="navbar-menu ${IsActiveBurger}">
       <div class="navbar-start">
         ${StartNav}
       </div>
