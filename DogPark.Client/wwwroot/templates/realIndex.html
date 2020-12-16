@@ -5,6 +5,7 @@
   <base href="/">
   <link rel="author" href="humans.txt" />
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/custom.css">
   <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
   <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
   <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
@@ -25,7 +26,7 @@
   ${Head}
 </head>
 
-<body>
+<body class="bulma-footer-fix">
   <nav class="navbar is-dark mb-4" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
       <a class="navbar-item has-text-weight-bold is-size-5" href="/">
@@ -46,10 +47,18 @@
       </div>
     </div>
   </nav>
-  <div class="container is-fluid">
+  <div class="container is-fluid bulma-footer-fix-content">
     ${TopLevel}
     ${Content}
   </div>
+  <footer class="footer">
+    <div class="container has-text-centered">
+      <a class="is-inline-block" href="https://github.com/ChernayaKoshka/">My GitHub</a>
+      <p class="has-text-weight-light is-size-7">
+        © 2020 & 2021 ChernayaKoshka
+      </p>
+    </div>
+  </footer>
   ${Scripts}
   <script src="_framework/blazor.webassembly.js"></script>
 </body>

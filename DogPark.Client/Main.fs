@@ -256,7 +256,6 @@ let homeView (baseView: View) model dispatch =
 let startNav dispatch username =
     concat [
         NavLink().Text("Articles").Link(router.Link Page.Articles).Elt()
-        NavLink().Text("GitHub").Link("https://github.com/ChernayaKoshka/").Elt()
         match username with
         | Some _ ->
             NavLink().Text("Article Editor").Link(router.Link Page.Editor).Elt()

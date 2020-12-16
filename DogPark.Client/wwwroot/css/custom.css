@@ -1,0 +1,9 @@
+.bulma-footer-fix {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+.bulma-footer-fix-content {
+    flex: 1;
+}
