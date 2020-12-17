@@ -238,31 +238,31 @@ let webApp =
                 subRoute "/v1" (
                     choose [
                         GET >=> choose [
-                            route "/ping" >=> text "pong"
+                            routeCi "/ping" >=> text "pong"
 
-                            route "/article"
+                            routeCi "/article"
                                 >=> publicResponseCaching (int (TimeSpan.FromHours(1.).TotalSeconds)) None
                                 >=> getAllArticles
 
-                            routef "/article/%d" (fun (id: int64) ->
+                            routeCif "/article/%d" (fun (id: int64) ->
                                 publicResponseCaching (int (TimeSpan.FromHours(1.).TotalSeconds)) None
                                 >=> handleArticle (uint32 id)
                             )
 
-                            route "/ip" >=> fun next ctx -> text (string ctx.Connection.RemoteIpAddress) next ctx
-                            route "/am/i/local" >=> mustBeLocal >=> text "you're local"
-                            route "/am/i/loggedIn" >=> requiresAuthentication (error "You're not logged in.") >=> jmessage "You're logged in."
-                            route "/account/details" >=> requiresAuthentication (error "You're not logged in.") >=> accountDetails
+                            routeCi "/ip" >=> fun next ctx -> text (string ctx.Connection.RemoteIpAddress) next ctx
+                            routeCi "/am/i/local" >=> mustBeLocal >=> text "you're local"
+                            routeCi "/am/i/loggedIn" >=> requiresAuthentication (error "You're not logged in.") >=> jmessage "You're logged in."
+                            routeCi "/account/details" >=> requiresAuthentication (error "You're not logged in.") >=> accountDetails
                         ]
                         POST >=> choose [
-                            route "/seed" >=> mustBeLocal >=> seed
-                            route "/article" >=> requiresAuthentication mustBeLoggedIn >=> postArticle
-                            subRoute "/account" (
+                            routeCi "/seed" >=> mustBeLocal >=> seed
+                            routeCi "/article" >=> requiresAuthentication mustBeLoggedIn >=> postArticle
+                            subRouteCi "/account" (
                                 choose [
-                                    route "/login" >=> loginHandler
-                                    route "/logout" >=> logoutHandler
-                                    route "/changePassword" >=> requiresAuthentication mustBeLoggedIn >=> changePassword
-                                    route "/refreshToken" >=> refreshTokenHandler
+                                    routeCi "/login" >=> loginHandler
+                                    routeCi "/logout" >=> logoutHandler
+                                    routeCi "/changePassword" >=> requiresAuthentication mustBeLoggedIn >=> changePassword
+                                    routeCi "/refreshToken" >=> refreshTokenHandler
                                 ]
                             )
                         ]
@@ -274,11 +274,11 @@ let webApp =
 
         choose [ GET; HEAD ]
         >=> choose [
-            route "/"
-            route "/Login"
-            route "/Articles"
-            route "/Editor"
-            routex @"/Article/\d+"
+            routeCi "/"
+            routeCi "/Login"
+            routeCi "/Articles"
+            routeCi "/Editor"
+            routeCix @"/Article/\d+"
         ]
         >=> htmlFile (Path.Combine(webRoot, "index.html"))
 
