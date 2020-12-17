@@ -3,7 +3,7 @@ module DogPark.App
 open DogPark.Shared
 open DogPark.Authentication
 open Giraffe
-open Giraffe.Serialization.Json
+open Giraffe.Razor
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
@@ -23,7 +23,7 @@ open Serilog.Sinks.MariaDB.Extensions
 open Serilog.AspNetCore
 open Serilog.Events
 open Microsoft.Extensions.FileProviders
-open FSharp.Control.Tasks.V2.ContextInsensitive
+open FSharp.Control.Tasks
 open System.Runtime.InteropServices
 open System.Threading.Tasks
 open System.Text.Json
@@ -37,6 +37,17 @@ open Microsoft.IdentityModel.Tokens
 open System.Security.Claims
 open System.Security.Cryptography
 open System.Text.Json
+
+open Microsoft.AspNetCore
+open Microsoft.AspNetCore.Authentication.Cookies
+open Microsoft.AspNetCore.Builder
+open Microsoft.AspNetCore.Hosting
+open Microsoft.Extensions.DependencyInjection
+open Bolero
+open Bolero.Remoting.Server
+open Bolero.Server.RazorHost
+// open Bolero.Templating.Server
+
 
 // ---------------------------------
 // Web app
@@ -280,7 +291,7 @@ let webApp =
             routeCi "/Editor"
             routeCix @"/Article/\d+"
         ]
-        >=> htmlFile (Path.Combine(webRoot, "index.html"))
+        >=> razorHtmlView "_Host" None None None
 
         setStatusCode 404 >=> text "Not Found"
     ]
@@ -383,7 +394,7 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
     |> ignore
 
     services
-        .AddSingleton<IJsonSerializer>(SystemTextJsonSerializer(jsonOptions))
+        .AddSingleton<Json.ISerializer>(SystemTextJson.Serializer(jsonOptions))
         .AddIdentity<User, Role>(
             fun options ->
                 // Password settings
@@ -430,6 +441,11 @@ let configureServices (config: IConfigurationRoot) (services : IServiceCollectio
                 )
         )
     |> ignore
+
+
+    services.AddMvc().AddRazorRuntimeCompilation() |> ignore
+    services.AddServerSideBlazor() |> ignore
+    services.AddBoleroHost() |> ignore
 
     services.AddGiraffe()
     |> ignore
@@ -485,7 +501,7 @@ let main args =
 
     configureLogging config
 
-    Directory.SetCurrentDirectory(contentRoot)
+    // Directory.SetCurrentDirectory(contentRoot)
 
     for var in config.AsEnumerable() do
         Log.Debug(sprintf "%A" var)

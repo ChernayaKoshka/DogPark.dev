@@ -76,7 +76,7 @@ type Model =
 let router = Router.infer SetPage (fun m -> m.Page)
 
 let initModel (clientFactory: IHttpClientFactory) (localStorage: ILocalStorageService) (jsRuntime: IJSRuntime) =
-    let client = clientFactory.CreateClient(BaseAddress = Api.BaseUri)
+    let client = if isNull clientFactory then null else clientFactory.CreateClient(BaseAddress = Api.BaseUri)
 
     let api =
         match makeApi<Api> Api.BaseUri jsonOptions client with
