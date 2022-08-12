@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
@@ -15,11 +15,11 @@
     <Compile Include="Startup.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Blazored.LocalStorage" Version="3.0.0" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.2.0" />
     <PackageReference Include="Bolero" Version="0.*" />
     <PackageReference Include="Bolero.Build" Version="0.*" />
     <PackageReference Include="Markdig" Version="0.*" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.*" />
     <PackageReference Include="FsEasyHttp" Version="4.*" />
     <PackageReference Include="TaskBuilder.fs" Version="2.*" />
   </ItemGroup>

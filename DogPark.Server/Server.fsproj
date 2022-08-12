@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,17 +15,17 @@
 
   <ItemGroup>
     <PackageReference Include="Bolero.Server" Version="0.*" />
-    <PackageReference Include="Dapper" Version="2.0.30" />
-    <PackageReference Include="Giraffe" Version="5.0.0-rc-6" />
+    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="Giraffe" Version="6.0.0" />
     <PackageReference Include="Giraffe.Razor" Version="5.1.0-rc-2" />
     <PackageReference Include="Markdig" Version="0.*" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.1" />
-    <PackageReference Include="MySqlConnector" Version="0.61.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />
-    <PackageReference Include="Serilog.Sinks.MariaDB" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.8" />
+    <PackageReference Include="MySqlConnector" Version="2.1.11" />
+    <PackageReference Include="Serilog.AspNetCore" Version="6.0.1" />
+    <PackageReference Include="Serilog.Sinks.MariaDB" Version="1.0.1" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="6.0.*" />
   </ItemGroup>
 
   <ItemGroup>
