@@ -74,17 +74,16 @@ let view (baseView: View) model dispatch =
     // can't have this as a template because we need to dynamically add/remove the disabled attribute.
     // which templates won't let you do... for some reason
     let loginButton =
-        button [
+        button {
             attr.``type`` "submit"
             attr.``class`` "button is-primary is-pulled-right"
+            attr.disabled (model.Login.IsValid())
             on.click (fun _ -> dispatch Login)
-            if model.Login.IsValid() |> not then attr.disabled ""
-        ] [
             text "Login"
-        ]
+        }
 
     baseView
-        .Head(Empty)
+        .Head(empty())
         .Content(
             LoginView()
                 // This lint is nothing but lies! Kidding, but composition won't actually work here.
@@ -95,5 +94,5 @@ let view (baseView: View) model dispatch =
                 .LoginButton(loginButton)
                 .Elt()
         )
-        .Scripts(Empty)
+        .Scripts(empty())
         .Elt()

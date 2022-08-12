@@ -45,7 +45,7 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Bolero
 open Bolero.Remoting.Server
-open Bolero.Server.RazorHost
+open Bolero.Server
 // open Bolero.Templating.Server
 
 
@@ -510,6 +510,7 @@ let main args =
         try
             Host
                 .CreateDefaultBuilder()
+                .UseSerilog()
                 .ConfigureWebHostDefaults(fun webHostBuilder ->
                     webHostBuilder
                         #if DEBUG
@@ -521,7 +522,6 @@ let main args =
                         .UseConfiguration(config)
                         .Configure(configureApp)
                         .ConfigureServices(configureServices config)
-                        .UseSerilog()
                         .UseKestrel()
                     |> ignore
                 )

@@ -1,6 +1,6 @@
 @page "/"
 @namespace DogPark.App
-@using Bolero.Server.RazorHost
+@using Bolero.Server
 @inject IBoleroHostConfig BoleroHostConfig
 
 @(await Html.RenderComponentAsync<DogPark.Client.Main.MyApp>(BoleroHostConfig))

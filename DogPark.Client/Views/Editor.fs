@@ -117,7 +117,7 @@ type EditorView = Template<"./wwwroot/templates/editor.html">
 let view (baseView: View) (model: Model) dispatch =
     let errors = model.Article.HasErrors()
     baseView
-        .Head(link [ attr.rel "stylesheet"; attr.href "css/vs.css" ])
+        .Head(link { attr.rel "stylesheet"; attr.href "css/vs.css" })
         .Content(
             EditorView()
                 // fsharplint:disable CanBeReplacedWithComposition
@@ -127,35 +127,35 @@ let view (baseView: View) (model: Model) dispatch =
                     match errors with
                     | Some errors ->
                         ErrorNotificationNoButton()
-                            .Content(errors |> List.map (fun t -> p [ ] [ text t ]) |> concat)
+                            .Content(concat { forEach errors (fun t -> p { text t }) })
                             .Elt()
                     | None ->
-                        empty
+                        empty()
                 )
                 .SubmitButton(
-                    div [ attr.``class`` "field" ] [
-                        div [ attr.``class`` "control" ] [
-                            button [
+                    div { 
+                        attr.``class`` "field" 
+                        div { 
+                            attr.``class`` "control"
+                            button {
                                 attr.``class`` "button is-link is-pulled-right"
-                                if errors.IsSome then
-                                    attr.disabled "true"
-                                else
-                                    on.click (fun _ -> dispatch Submit)
-                            ] [
+                                if errors.IsSome then attr.disabled "true"
+                                else on.click (fun _ -> dispatch Submit)
+                                
                                 text "Submit"
-                            ]
-                        ]
-                    ]
+                            }
+                        }
+                    }
                 )
                 .Preview(
-                    RawHtml (Markdig.Markdown.ToHtml(model.Article.Content, markdownPipeline))
+                    rawHtml (Markdig.Markdown.ToHtml(model.Article.Content, markdownPipeline))
                 )
                 .Elt()
         )
         .Scripts(
-            concat [
-                script [ attr.src "scripts/highlight.pack.js" ] [ ]
-                script [ ] [
+            concat {
+                script { attr.src "scripts/highlight.pack.js" }
+                script {
                     text
                         """
                         window.highlight = () => {
@@ -163,6 +163,6 @@ let view (baseView: View) (model: Model) dispatch =
                             Array.prototype.forEach.call(blocks, hljs.highlightBlock);
                         }
                         """
-                ]
-            ])
+                }
+            })
         .Elt()

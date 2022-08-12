@@ -53,36 +53,34 @@ let update model message =
 type Article = Template<"./wwwroot/templates/article.html">
 let view (baseView: View) model dispatch =
     baseView
-        .Head(link [ attr.rel "stylesheet"; attr.href "css/vs.css" ])
+        .Head(link { attr.rel "stylesheet"; attr.href "css/vs.css" })
         .Content(
-            div [ ] [
+            div {
                 cond model.Article <| function
                 | Some article ->
                     Article()
                         .Title(article.Details.Headline)
                         .Subtitle($"Author: {article.Details.Author} @ {article.Details.Created}")
-                        .Content(RawHtml article.HtmlBody)
+                        .Content(rawHtml article.HtmlBody)
                         .Elt()
                 | None ->
                     text "Loading..."
-            ]
+            }
         )
         .Scripts(
-            concat [
-                script [ attr.src "scripts/highlight.pack.js" ] [ ]
+            concat {
+                script { attr.src "scripts/highlight.pack.js" }
                 cond model.Article <| function
                 | Some _ ->
-                    concat [
-                        script [ ] [
-                            text
-                                """
-                                var blocks = document.querySelectorAll('pre code:not(.hljs)');
-                                Array.prototype.forEach.call(blocks, hljs.highlightBlock);
-                                """
-                        ]
-                    ]
+                    script {
+                        text
+                            """
+                            var blocks = document.querySelectorAll('pre code:not(.hljs)');
+                            Array.prototype.forEach.call(blocks, hljs.highlightBlock);
+                            """
+                    }
                 | None ->
-                    empty
-            ]
+                    empty()
+            }
         )
         .Elt()

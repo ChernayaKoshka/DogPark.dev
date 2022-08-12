@@ -52,20 +52,20 @@ let update (model: Model) (message: Msg) =
 
 let view (baseView: View) model dispatch =
     baseView
-        .Head(Empty)
+        .Head(empty())
         .Content(
-            div [ ] [
-                ul [ ] [
+            div {
+                ul {
                     forEach
                         model.ArticlesList
                         (fun al ->
-                            li [ ] [
+                            li {
                                 text $"{al.Author} @ {al.Created} - "
-                                a [ attr.href $"Article/{al.Id}" ] [ text al.Headline ]
-                            ]
+                                a { attr.href $"Article/{al.Id}"; text al.Headline }
+                            }
                         )
-                ]
-            ]
+                }
+            }
         )
-        .Scripts(Empty)
+        .Scripts(empty())
         .Elt()

@@ -244,38 +244,37 @@ let update message model =
 
 let homeView (baseView: View) model dispatch =
     baseView
-        .Head(Empty)
-        .Content(
-            div [ ] [
-                p [ ] [ text "Hello, world!" ]
-            ]
-        )
-        .Scripts(Empty)
+        .Head(empty())
+        .Content(div { p { text "Hello, world!" } })
+        .Scripts(empty())
         .Elt()
 
 let startNav dispatch username =
-    concat [
+    concat {
         NavLink().Text("Articles").Link(router.Link Page.Articles).Elt()
-        match username with
-        | Some _ ->
-            NavLink().Text("Article Editor").Link(router.Link Page.Editor).Elt()
-        | _ ->
-            ()
-    ]
+        cond username (fun username ->
+            match username with
+            | Some _ ->
+                NavLink().Text("Article Editor").Link(router.Link Page.Editor).Elt()
+            | _ ->
+                empty()
+            )
+    }
 
 let endNav dispatch username =
     match username with
     | Some username ->
-        concat [
-            p [ attr.``class`` "navbar-item is-size-5" ] [
+        concat {
+            p {
+                attr.``class`` "navbar-item is-size-5"
                 text $"Hello, {username}"
-            ]
+            }
             NavButton()
                 .Class("is-light")
                 .Text("Logout")
                 .Clicked(fun _ -> dispatch Logout)
                 .Elt()
-        ]
+        }
     | None ->
         NavButton()
             .Class("is-primary")
@@ -303,7 +302,7 @@ let view model dispatch =
                         .Content(text err)
                         .Elt()
                 | _ ->
-                    empty
+                    empty()
             )
 
     match (model.Page, model.Submodel) with

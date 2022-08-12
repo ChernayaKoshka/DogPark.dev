@@ -5,12 +5,7 @@ open Microsoft.AspNetCore.Identity
 open System
 open System.Threading
 open System.Threading.Tasks
-open System.Linq
 open FSharp.Control.Tasks.V2.ContextInsensitive
-open Microsoft.Extensions.Configuration
-open MySqlConnector
-open MySql.Data.MySqlClient
-open Dapper
 open DogPark
 
 type MariaDBStore(queries: Queries) =

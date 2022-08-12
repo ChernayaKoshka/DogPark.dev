@@ -5,7 +5,7 @@ open Dapper
 open System.Collections.Generic
 open System.Linq
 open FSharp.Control.Tasks.V2.ContextInsensitive
-open MySql.Data.MySqlClient
+open MySqlConnector
 open System.Threading
 
 type Queries(connectionString) =
