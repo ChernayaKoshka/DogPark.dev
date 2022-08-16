@@ -5,6 +5,13 @@ module DogPark.Shared.Types
 open System
 open System.Security.Claims
 
+type SmorpaData =
+    {
+        Id: int
+        Name: string
+        ImageUrls: string[]
+    }
+
 type ChangePasswordModel =
     {
         OldPassword: string

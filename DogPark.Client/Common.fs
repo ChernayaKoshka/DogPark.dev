@@ -38,6 +38,10 @@ type Api =
         [<Path("account/details")>]
         AccountDetails: unit -> Task<AccountDetailsResponse>
 
+        [<Method("GET")>]
+        [<Path("smorpa/{Id}")>]
+        GetSmorpa: {| Id: int |} -> Task<SmorpaData>
+
         [<Path("account/refreshToken")>]
         RefreshToken: unit -> Task<LoginResponse>
     }

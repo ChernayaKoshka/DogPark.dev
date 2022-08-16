@@ -264,6 +264,8 @@ let webApp =
                             routeCi "/am/i/local" >=> mustBeLocal >=> text "you're local"
                             routeCi "/am/i/loggedIn" >=> requiresAuthentication (error "You're not logged in.") >=> jmessage "You're logged in."
                             routeCi "/account/details" >=> requiresAuthentication (error "You're not logged in.") >=> accountDetails
+                            
+                            routeCif "/smorpa/%d" HttpHandlers.Api.Smorpa.getSmorpa
                         ]
                         POST >=> choose [
                             routeCi "/seed" >=> mustBeLocal >=> seed

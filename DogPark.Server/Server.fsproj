@@ -11,6 +11,7 @@
     <Compile Include="Authentication/UserStore.fs" />
     <Compile Include="Authentication/RoleStore.fs" />
     <Compile Include="Authentication/JwtAuthManager.fs" />
+    <Compile Include="HttpHandlers/Api/Smorpa.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
 
