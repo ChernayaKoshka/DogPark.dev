@@ -60,7 +60,7 @@ let update (model: Model) message =
                 }
         }, Cmd.none
     | SetContent content ->
-        model.LastContentUpdate := DateTime.Now
+        model.LastContentUpdate.Value <- DateTime.Now
         { model with
             Article =
                 { model.Article with
@@ -71,7 +71,7 @@ let update (model: Model) message =
         if model.HighlightState = Available then
             Cmd.OfTask.perform
                 (fun () -> task {
-                    while DateTime.Now - !model.LastContentUpdate <= TimeSpan.FromSeconds(0.5) do
+                    while DateTime.Now - model.LastContentUpdate.Value <= TimeSpan.FromSeconds(0.5) do
                         do! Task.Delay(TimeSpan.FromSeconds(0.25))
                     return BeginHighlight
                 })
