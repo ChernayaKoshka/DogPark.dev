@@ -51,6 +51,17 @@
     ${TopLevel}
     ${Content}
   </div>
+  
+  <div id="blazor-loading" class="columns is-flex is-vcentered is-centered is-overlay is-hidden">
+    <div class="column is-three-fifths">
+      <p class="title has-text-centered">Loading...</p>
+      <p>
+        <progress id="blazor-loading-bar" class="progress is-large is-info" max="100">Loading...</progress>
+      </p>
+      <p id="blazor-loading-item" class="is-size-7 has-text-centered"></p>
+    </div>
+  </div>
+
   <footer class="footer">
     <div class="container has-text-centered">
       <a class="is-inline-block" href="https://github.com/ChernayaKoshka/">My GitHub</a>
@@ -60,5 +71,45 @@
     </div>
   </footer>
   ${Scripts}
-  <script src="_framework/blazor.webassembly.js"></script>
+  <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+  <!--Thanks https://swharden.com/blog/2022-05-29-blazor-loading-progress/-->
+  <script type="text/javascript">
+    function StartBlazor() {
+      document.getElementById('blazor-loading').classList.remove('is-hidden');
+
+      let loadedCount = 0;
+      const resourcesToLoad = [];
+      Blazor.start({
+        loadBootResource:
+        function (type, filename, defaultUri, integrity) {
+            if (type == "dotnetjs")
+              return defaultUri;
+
+            const fetchResources = fetch(defaultUri, {
+              cache: 'no-cache',
+              integrity: integrity
+            });
+
+            resourcesToLoad.push(fetchResources);
+
+            fetchResources.then((r) => {
+              loadedCount += 1;
+              if (filename == "blazor.boot.json")
+                return;
+              const totalCount = resourcesToLoad.length;
+              const progressbar = document.getElementById('blazor-loading-bar');
+              progressbar.setAttribute("value", loadedCount);
+              progressbar.setAttribute("max", totalCount);
+              const progressLabel = document.getElementById('blazor-loading-item');
+              progressLabel.innerText = "Downloading " + loadedCount + "/" + totalCount + ": " + filename;
+            });
+
+            return fetchResources;
+          }
+      });
+      
+    }
+
+    StartBlazor();
+  </script>
 </body>
