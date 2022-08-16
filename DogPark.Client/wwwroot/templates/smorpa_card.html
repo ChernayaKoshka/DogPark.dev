@@ -1,30 +1,34 @@
+<div class="content">
+    <div class="columns">
+        <div class="column"></div>
+        <div class="column is-narrow">
+            <div class="columns mb-0 pb-0">
+                <div class="column">
+                    <p class="is-size-1 has-text-left has-text-danger">PASS: ${PassCount}</p>
+                </div>
+                <div class="column">
+                    <p class="is-size-1 has-text-right has-text-success">SMASH: ${SmashCount}</p>
+                </div>
+            </div>
 
-<div>
-    
-    <div class="columns mb-0 pb-0">
-        <div class="column">
-            <p class="is-size-1 has-text-left has-text-danger">PASS: ${PassCount}</p>
-        </div>
-        <div class="column">
-            <p class="is-size-1 has-text-right has-text-success">SMASH: ${SmashCount}</p>
-        </div>
-    </div>
-
-    <div class="card mt-0 pt-0">
-        <div class="card-header">
-            <p class="card-header-title">
-                ${Name}
-            </p>
-        </div>
-        <div class="card-content">
-            <div class="is-flex is-justify-content-center smorpa">
-                <img src="${PokemonImageSource}" alt="${Name}"/>
+            <div class="card mt-0 pt-0">
+                <div class="card-header">
+                    <p class="card-header-title">
+                        ${Name}
+                    </p>
+                </div>
+                <div class="is-flex is-justify-content-center card-content">
+                    <div class="is-flex is-justify-content-center smorpa">
+                        <img src="${PokemonImageSource}" alt="${Name}" />
+                    </div>
+                </div>
+                <footer class="card-footer">
+                    <button class="m-1 card-footer-item button is-danger" onclick="${Pass}">Pass</button>
+                    ${NewImageButton}
+                    <button class="m-1 card-footer-item button is-success" onclick="${Smash}">Smash</button>
+                </footer>
             </div>
         </div>
-        <footer class="card-footer">
-            <button class="m-1 card-footer-item button is-danger" onclick="${Pass}">Pass</button>
-            ${NewImageButton}
-            <button class="m-1 card-footer-item button is-success" onclick="${Smash}">Smash</button>
-        </footer>
+        <div class="column"></div>
     </div>
 </div>

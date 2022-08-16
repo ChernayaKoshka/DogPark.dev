@@ -11,6 +11,7 @@
     <Compile Include="Views/Article.fs" />
     <Compile Include="Views/Login.fs" />
     <Compile Include="Views/Editor.fs" />
+    <Compile Include="Views/Smorpa.fs" />
     <Compile Include="Main.fs" />
     <Compile Include="Startup.fs" />
   </ItemGroup>

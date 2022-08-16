@@ -265,7 +265,7 @@ let webApp =
                             routeCi "/am/i/loggedIn" >=> requiresAuthentication (error "You're not logged in.") >=> jmessage "You're logged in."
                             routeCi "/account/details" >=> requiresAuthentication (error "You're not logged in.") >=> accountDetails
                             
-                            routeCif "/smorpa/%d" HttpHandlers.Api.Smorpa.getSmorpa
+                            routeCif "/smorpa/%i" HttpHandlers.Api.Smorpa.getSmorpa
                         ]
                         POST >=> choose [
                             routeCi "/seed" >=> mustBeLocal >=> seed
@@ -292,6 +292,7 @@ let webApp =
             routeCi "/Articles"
             routeCi "/Editor"
             routeCix @"/Article/\d+"
+            routeCi "/Smorpa"
         ]
         >=> razorHtmlView "_Host" None None None
 

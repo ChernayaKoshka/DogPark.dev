@@ -19,8 +19,6 @@ module Smorpa =
             )
         )
 
-    let random = new Random()
-
     let getSmorpa (id: int): HttpHandler = 
         fun next ctx -> task {
             let id = if id > smorpa.Length - 1 then 0 else id

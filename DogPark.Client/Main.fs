@@ -23,6 +23,7 @@ type Page =
     | Articles
     | Login
     | Editor
+    | Smorpa
 
 type Submodel =
     | Home
@@ -30,12 +31,14 @@ type Submodel =
     | ArticlesList of ArticlesList.Model
     | Article of Article.Model
     | Editor of Editor.Model
+    | Smorpa of Smorpa.Model
 
 type SubmodelMsg =
     | LoginMsg of Login.Msg
     | ArticleMsg of Article.Msg
     | ArticlesListMsg of ArticlesList.Msg
     | EditorMsg of Editor.Msg
+    | SmorpaMsg of Smorpa.Msg
 
 type Message =
     | SetPage of Page
@@ -137,6 +140,9 @@ let update message model =
                     page, Submodel.Editor submodel, subMsg EditorMsg nextCmd
                 | None ->
                     Page.Home, Submodel.Home, Cmd.ofMsg (setError "You are not authorized to view that page.")
+            | Page.Smorpa ->
+                let submodel, nextCmd = Smorpa.init model.Api
+                page, Submodel.Smorpa submodel, subMsg SmorpaMsg nextCmd
         { model with
             Page = page
             Submodel = submodel
@@ -236,6 +242,13 @@ let update message model =
                 | msg ->
                     let next, nextCmd = Editor.update editorModel msg
                     Submodel.Editor next, subMsg EditorMsg nextCmd
+            | SmorpaMsg msg, Submodel.Smorpa smorpaModel ->
+                match msg with
+                | Smorpa.Msg.SetError err ->
+                    Submodel.Smorpa smorpaModel, Cmd.ofMsg (SetError err)
+                | msg ->
+                    let next, nextCmd = Smorpa.update smorpaModel msg
+                    Submodel.Smorpa next, subMsg SmorpaMsg nextCmd
             | msg, model ->
                 failwithf "Somehow '%A' and '%A' ended up together! Or you forgot to add a new sobmodel" msg model
         { model with
@@ -252,6 +265,7 @@ let homeView (baseView: View) model dispatch =
 let startNav dispatch username =
     concat {
         NavLink().Text("Articles").Link(router.Link Page.Articles).Elt()
+        NavLink().Text("Smorpa (NSFW)").Link(router.Link Page.Smorpa).Elt()
         cond username (fun username ->
             match username with
             | Some _ ->
@@ -316,6 +330,8 @@ let view model dispatch =
         Login.view baseView model (LoginMsg >> SubmodelMsg >> dispatch)
     | Page.Editor, Submodel.Editor model ->
         Editor.view baseView model (EditorMsg >> SubmodelMsg >> dispatch)
+    | Page.Smorpa, Submodel.Smorpa model ->
+        Smorpa.view baseView model (SmorpaMsg >> SubmodelMsg >> dispatch)
     | page, model ->
         failwithf "'%A' and '%A' are not compatible or are not handled." page model
 
